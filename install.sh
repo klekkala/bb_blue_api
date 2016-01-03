@@ -62,14 +62,14 @@ else
 	AM335_DTB="/boot/dtbs/$KERNEL/am335x-boneblack.dtb"
 fi
 
-# detect if preemptive scheduling is enabled
-# not necessary
-if [ ! -f /sys/kernel/realtime ]; 
-then
-	echo "installing without realtime preemption"	
-else
-	echo "installing with realtime preemption"
-fi
+# # detect if preemptive scheduling is enabled
+# # not necessary
+# if [ ! -f /sys/kernel/realtime ]; 
+# then
+	# echo "installing without realtime preemption"	
+# else
+	# echo "installing with realtime preemption"
+# fi
 
 #check dependencies
 if [ ! -f /usr/bin/make ]; then
@@ -115,10 +115,10 @@ echo " "
 find . -exec touch {} \;
 
 echo "Installing Device Tree Overlay"
-if [ "$IMG" == "2015-11-12" ]; #  image includes dtc compiler
-then dtc -O dtb -o /lib/firmware/$OVERLAY.dtbo -b 0 -@ install_files/$OVERLAY.dts
-# older images need pre-compiled dtbo
-else cp install_files/$IMG/$OVERLAY.dtbo /lib/firmware/$OVERLAY.dtbo
+if [ "$IMG" == "2014-05-14" ]; # older images need pre-compiled dtbo
+then cp install_files/$IMG/$OVERLAY.dtbo /lib/firmware/$OVERLAY.dtbo
+#  newer images include dtc compiler
+else dtc -O dtb -o /lib/firmware/$OVERLAY.dtbo -b 0 -@ install_files/$OVERLAY.dts
 fi
 
 # make a backup of the original uEnv.txt file
