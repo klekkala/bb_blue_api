@@ -33,7 +33,7 @@ Supporting library for Robotics Cape Features
 Strawson Design - 2014
 */
 
-//#define DEBUG
+#define DEBUG
 
 #define _GNU_SOURCE 	// to enable macros in pthread
 #include <pthread.h>    // multi-threading
@@ -136,6 +136,39 @@ int initialize_cape(){
 		return -1;
 	}
 	
+	//set up function pointers for button press events
+	printf("starting button interrupts\n");
+	initialize_button_handlers();
+	
+	gpio_export(RED_LED);
+	gpio_set_dir(RED_LED, OUTPUT_PIN);
+	gpio_export(GRN_LED);
+	gpio_set_dir(GRN_LED, OUTPUT_PIN);
+	gpio_export(MDIR1A);
+	gpio_set_dir(MDIR1A, OUTPUT_PIN);
+	gpio_export(MDIR1B);
+	gpio_set_dir(MDIR1B, OUTPUT_PIN);
+	gpio_export(MDIR2A);
+	gpio_set_dir(MDIR2A, OUTPUT_PIN);
+	gpio_export(MDIR2B);
+	gpio_set_dir(MDIR2B, OUTPUT_PIN);
+	gpio_export(MDIR3A);
+	gpio_set_dir(MDIR3A, OUTPUT_PIN);
+	gpio_export(MDIR3B);
+	gpio_set_dir(MDIR3B, OUTPUT_PIN);
+	gpio_export(MDIR4A);
+	gpio_set_dir(MDIR4B, OUTPUT_PIN);
+	gpio_export(MOT_STBY);
+	gpio_set_dir(MOT_STBY, OUTPUT_PIN);
+	gpio_export(PAIRING_PIN);
+	gpio_set_dir(PAIRING_PIN, OUTPUT_PIN);
+	gpio_export(SPI1_SS1_GPIO_PIN);
+	gpio_set_dir(SPI1_SS1_GPIO_PIN, OUTPUT_PIN);
+	gpio_export(SPI1_SS2_GPIO_PIN);
+	gpio_set_dir(SPI1_SS2_GPIO_PIN, OUTPUT_PIN);
+	gpio_export(INTERRUPT_PIN);
+	gpio_set_dir(INTERRUPT_PIN, INPUT_PIN);
+	
 	// initialize mmap io libs
 	printf("initializing GPIO\n");
 	if(initialize_gpio()){
@@ -174,10 +207,6 @@ int initialize_cape(){
 	deselect_spi1_slave(1);	
 	deselect_spi1_slave(2);
 	disable_motors();
-	
-	//set up function pointers for button press events
-	printf("starting button interrupts\n");
-	initialize_button_handlers();
 	
 	// Load binary into PRU
 	printf("Starting PRU servo controller\n");
@@ -528,19 +557,19 @@ float getJackVoltage(){
 	return v_adc*11.0; 
 }
 
-/*********************************************************************************
+/*****************************************************************
 *	int initialize_button_interrups()
 *
 *	start 4 threads to handle 4 interrupt routines for pressing and
 *	releasing the two buttons.
-**********************************************************************************/
+******************************************************************/
 int initialize_button_handlers(){
 	
 	#ifdef DEBUG
 	printf("setting up mode & pause gpio pins\n");
 	#endif
 	//set up mode pin
-	if(gpio_export(MODE_BTN)){
+	if(gpio_export(MODE_BTN)<0){
 		printf("can't export gpio %d \n", MODE_BTN);
 		return (-1);
 	}
@@ -548,7 +577,7 @@ int initialize_button_handlers(){
 	gpio_set_edge(MODE_BTN, "both");  // Can be rising, falling or both
 	
 	//set up pause pin
-	if(gpio_export(PAUSE_BTN)){
+	if(gpio_export(PAUSE_BTN)<0){
 		printf("can't export gpio %d \n", PAUSE_BTN);
 		return (-1);
 	}
