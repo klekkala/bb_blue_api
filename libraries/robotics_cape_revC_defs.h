@@ -48,9 +48,14 @@
 #define UNPRESSED 0
 
 //// Button pins
-// gpio # for gpio_a.b = (32*a)+b
 #define PAUSE_BTN 69 	//gpio2.5 P8.9
 #define MODE_BTN  68	//gpio2.4 P8.10
+
+// battery indicator led pins
+#define BATT_LED_1	27 // P8.17
+#define BATT_LED_2	47 // P8.15
+#define BATT_LED_3	46 // P8.16
+#define BATT_LED_4	26 // P8.14
 
 //// gpio output pins 
 #define RED_LED 	66	//gpio2.2	P8.7
