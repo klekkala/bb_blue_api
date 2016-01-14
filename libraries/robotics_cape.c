@@ -33,7 +33,7 @@ Supporting library for Robotics Cape Features
 Strawson Design - 2014
 */
 
-#define DEBUG
+//#define DEBUG
 
 #define _GNU_SOURCE 	// to enable macros in pthread
 #include <pthread.h>    // multi-threading
@@ -136,10 +136,13 @@ int initialize_cape(){
 		return -1;
 	}
 	
-	//set up function pointers for button press events
-	printf("starting button interrupts\n");
-	initialize_button_handlers();
-	
+	// initialize mmap io libs
+	printf("Initializing GPIO\n");
+	if(initialize_gpio()){
+		printf("mmap_gpio_adc.c failed to initialize gpio\n");
+		return -1;
+	}
+	//export all GPIO output pins
 	gpio_export(RED_LED);
 	gpio_set_dir(RED_LED, OUTPUT_PIN);
 	gpio_export(GRN_LED);
@@ -157,6 +160,8 @@ int initialize_cape(){
 	gpio_export(MDIR3B);
 	gpio_set_dir(MDIR3B, OUTPUT_PIN);
 	gpio_export(MDIR4A);
+	gpio_set_dir(MDIR4A, OUTPUT_PIN);
+	gpio_export(MDIR4B);
 	gpio_set_dir(MDIR4B, OUTPUT_PIN);
 	gpio_export(MOT_STBY);
 	gpio_set_dir(MOT_STBY, OUTPUT_PIN);
@@ -169,12 +174,6 @@ int initialize_cape(){
 	gpio_export(INTERRUPT_PIN);
 	gpio_set_dir(INTERRUPT_PIN, INPUT_PIN);
 	
-	// initialize mmap io libs
-	printf("initializing GPIO\n");
-	if(initialize_gpio()){
-		printf("mmap_gpio_adc.c failed to initialize gpio\n");
-		return -1;
-	}
 	printf("Initializing ADC\n");
 	if(initialize_adc()){
 		printf("mmap_gpio_adc.c failed to initialize adc\n");
@@ -193,30 +192,38 @@ int initialize_cape(){
 		printf("mmap_pwmss.c failed to initialize eQEP\n");
 		return -1;
 	}
+	
+	// setup pwm driver
 	printf("Initializing PWM\n");
-	if(init_pwm(1)){
-		printf("mmap_pwmss.c failed to initialize PWMSS 0\n");
+	if(simple_init_pwm(1,PWM_FREQ)){
+		printf("simple_pwm.c failed to initialize PWMSS 0\n");
 		return -1;
 	}
-	if(init_pwm(2)){
-		printf("mmap_pwmss.c failed to initialize PWMSS 1\n");
+	if(simple_init_pwm(2,PWM_FREQ)){
+		printf("simple_pwm.c failed to initialize PWMSS 1\n");
 		return -1;
 	}
+	
+	
 	
 	// start some gpio pins at defaults
 	deselect_spi1_slave(1);	
 	deselect_spi1_slave(2);
 	disable_motors();
 	
+	//set up function pointers for button press events
+	printf("Initializing button interrupts\n");
+	initialize_button_handlers();
+	
 	// Load binary into PRU
-	printf("Starting PRU servo controller\n");
+	printf("Initializing PRU servo controller\n");
 	if(initialize_pru_servos()){
 		printf("ERROR: PRU init FAILED\n");
 		return -1;
 	}
 	
 	// Start Signal Handler
-	printf("Enabling exit signal handler\n");
+	printf("Initializing exit signal handler\n");
 	signal(SIGINT, ctrl_c);	
 	
 	// Print current battery voltage
@@ -229,11 +236,11 @@ int initialize_cape(){
 	return 0;
 }
 
-/*********************************************************************************
+/******************************************************************
 *	int cleanup_cape()
 *	shuts down library and hardware functions cleanly
 *	you should call this before your main() function returns
-**********************************************************************************/
+*******************************************************************/
 int cleanup_cape(){
 	set_state(EXITING);
 	
@@ -409,10 +416,10 @@ int set_motor_all(float duty){
 * used in shutdown sequence
 *****************************************************************/
 int kill_pwm(){
-	set_pwm_duty(1, 'A', 0.0);
-	set_pwm_duty(1, 'B', 0.0);
-	set_pwm_duty(2, 'A', 0.0);
-	set_pwm_duty(2, 'B', 0.0);
+	simple_set_pwm_duty(1, 'A', 0.0);
+	simple_set_pwm_duty(1, 'B', 0.0);
+	simple_set_pwm_duty(2, 'A', 0.0);
+	simple_set_pwm_duty(2, 'B', 0.0);
 	return 0;
 }
 
@@ -445,11 +452,13 @@ int disable_motors(){
 * returns the encoder counter position
 *****************************************************************/
 int get_encoder_pos(int ch){
-	if(ch>3 || ch<1){
-		printf("encoder channel must be 1,2, or 3\n");
+	if(ch<1 || ch>3){
+		printf("Encoder Channel must be from 1 to 3\n");
 		return -1;
 	}
-	return read_eqep(ch-1);
+	
+	// first 3 channels counted by eQEP
+	return  read_eqep(ch-1);
 }
 
 /*****************************************************************
@@ -462,7 +471,7 @@ int set_encoder_pos(int ch, int val){
 		printf("encoder channel must be 1,2, or 3\n");
 		return -1;
 	}
-	return write_eqep(ch, val);
+	return write_eqep(ch-1, val);
 }
 
 
@@ -557,8 +566,9 @@ float getJackVoltage(){
 	return v_adc*11.0; 
 }
 
+
 /*****************************************************************
-*	int initialize_button_interrups()
+*	int initialize_button_handlers()
 *
 *	start 4 threads to handle 4 interrupt routines for pressing and
 *	releasing the two buttons.
@@ -617,11 +627,11 @@ int initialize_button_handlers(){
 	return 0;
 }
 
-/*********************************************************************************
+/******************************************************************
 *	void* pause_pressed_handler(void* ptr)
 * 
 *	wait on falling edge of pause button
-**********************************************************************************/
+******************************************************************/
 void* pause_pressed_handler(void* ptr){
 	struct pollfd fdset[1];
 	char buf[MAX_BUF];
@@ -644,11 +654,11 @@ void* pause_pressed_handler(void* ptr){
 	return 0;
 }
 
-/*********************************************************************************
+/******************************************************************
 *	void* pause_unpressed_handler(void* ptr) 
 *
 *	wait on rising edge of pause button
-**********************************************************************************/
+******************************************************************/
 void* pause_unpressed_handler(void* ptr){
 	struct pollfd fdset[1];
 	char buf[MAX_BUF];
@@ -671,10 +681,10 @@ void* pause_unpressed_handler(void* ptr){
 	return 0;
 }
 
-/*********************************************************************************
+/******************************************************************
 *	void* mode_pressed_handler(void* ptr) 
 *	wait on falling edge of mode button
-**********************************************************************************/
+*******************************************************************/
 void* mode_pressed_handler(void* ptr){
 	struct pollfd fdset[1];
 	char buf[MAX_BUF];
@@ -697,10 +707,10 @@ void* mode_pressed_handler(void* ptr){
 	return 0;
 }
 
-/*********************************************************************************
+/******************************************************************
 *	void* mode_unpressed_handler(void* ptr) 
 *	wait on rising edge of mode button
-**********************************************************************************/
+*******************************************************************/
 void* mode_unpressed_handler(void* ptr){
 	struct pollfd fdset[1];
 	char buf[MAX_BUF];
@@ -1057,8 +1067,8 @@ int initialize_imu(int sample_rate, signed char orientation[9]){
 	gpio_set_dir(INTERRUPT_PIN, INPUT_PIN);
 	gpio_set_edge(INTERRUPT_PIN, "falling");  // Can be rising, falling or both
 		
-	//linux_set_i2c_bus(1);
-	linux_set_i2c_bus(2);
+	linux_set_i2c_bus(1);
+	//linux_set_i2c_bus(2);
 
 	
 	if (mpu_init(NULL)) {
@@ -1227,6 +1237,7 @@ void* imu_interrupt_handler(void* ptr){
 	return 0;
 }
 
+
 //// PRU Servo Control
 /*****************************************************************
 * 
@@ -1251,7 +1262,6 @@ int initialize_pru_servos(){
 	*(uint16_t*)(cm_per_base + CM_PER_PRU_ICSS_CLKSTCTRL) |= MODULEMODE_ENABLE;
 	close(dev_mem);
 	
-	
 	// start pru
 	#ifdef DEBUG
 		printf("calling prussdrv_init()\n");
@@ -1260,7 +1270,7 @@ int initialize_pru_servos(){
 	
     // Open PRU Interrupt
 	#ifdef DEBUG
-		printf("calling prussdrv_open\n");
+	printf("calling prussdrv_open\n");
 	#endif
     if (prussdrv_open(PRU_EVTOUT_0)){
         printf("prussdrv_open open failed\n");
@@ -1269,7 +1279,7 @@ int initialize_pru_servos(){
 
     // Get the interrupt initialized
 	#ifdef DEBUG
-		printf("calling prussdrv_pruintc_init\n");
+	printf("calling prussdrv_pruintc_init\n");
 	#endif
 	tpruss_intc_initdata pruss_intc_initdata = PRUSS_INTC_INITDATA;
     prussdrv_pruintc_init(&pruss_intc_initdata);
@@ -1278,7 +1288,7 @@ int initialize_pru_servos(){
 	void* sharedMem = NULL;
     prussdrv_map_prumem(PRUSS0_SHARED_DATARAM, &sharedMem);
     prusharedMem_32int_ptr = (unsigned int*) sharedMem;
-	memset(prusharedMem_32int_ptr, 0, SERVO_CHANNELS*4);
+	memset(prusharedMem_32int_ptr, 0, 9*4);
 	
 	// launch servo binary
 	prussdrv_exec_program(PRU_SERVO_NUM, PRU_SERVO_BIN_LOCATION);

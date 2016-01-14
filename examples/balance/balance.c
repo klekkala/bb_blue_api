@@ -626,13 +626,13 @@ int balance_core(){
 }
 
 
-/************************************************************************
+/******************************************************************
 * 	zero_out_controller()
 *	clear the controller state and setpoint
 *	especially should be called before swapping state to RUNNING
 *	keep current theta and vbatt since they may be used by 
 *	other threads
-************************************************************************/
+*******************************************************************/
 int zero_out_controller(){
 	// store theta and vbatt
 	float theta_tmp = cstate.current_theta;
@@ -665,12 +665,12 @@ int disarm_controller(){
 	return 0;
 }
 
-/************************************************************************
+/******************************************************************
 * 	arm_controller()
 *		- zero out the controller
 *		- set the setpoint.armed_state to ARMED
 *		- enable motors
-************************************************************************/
+*******************************************************************/
 int arm_controller(){
 	zero_out_controller();
 	setpoint.arm_state = ARMED;

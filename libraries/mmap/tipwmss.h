@@ -199,6 +199,10 @@
 #define AQ_CBU_CLEAR 0x1<<8
 #define AQ_CBU_SET 0x2<<8
 #define AQ_CBU_TOGGLE 0x3<<8
+#define AQ_PRD_NO_ACTION 0x0<<2
+#define AQ_PRD_CLEAR 0x1<<2
+#define AQ_PRD_SET 0x2<<2
+#define AQ_PRD_TOGGLE 0x3<<2
 
 
 // eHRPWM control register locations

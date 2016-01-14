@@ -4,9 +4,12 @@
 # tested on follwing beagleboard.org Debian releases 
 # 2014-05-14, 2015-03-01, 2015-11-12
 
+# this file is specific to the revision C cape
+
 INSTALL_DIR="/root"
 BOOTSCRIPT="Auto_Run_Script.sh"
 OVERLAY="SD-101C-00A0"
+CAPENAME="SD-101C"
 KERNEL="$(uname -r)"
 DEBIAN="$(cat /etc/debian_version)"
 
@@ -61,15 +64,6 @@ else
 	UENV_TXT="/boot/uEnv.txt"
 	AM335_DTB="/boot/dtbs/$KERNEL/am335x-boneblack.dtb"
 fi
-
-# # detect if preemptive scheduling is enabled
-# # not necessary
-# if [ ! -f /sys/kernel/realtime ]; 
-# then
-	# echo "installing without realtime preemption"	
-# else
-	# echo "installing with realtime preemption"
-# fi
 
 #check dependencies
 if [ ! -f /usr/bin/make ]; then
@@ -160,13 +154,14 @@ else
 	echo "invalid IMG variable value $IMG"
 fi
 
-# set SD-101C as the only cape to load
-echo "Setting Capemgr to Load Robotics Overlay by Default"
-echo "CAPE=SD-101C" > /etc/default/capemgr
+# set Robotics Cape as the only cape to load
+echo "Setting Capemgr to Load $CAPENAME Overlay by Default"
+echo "CAPE=$CAPENAME" > /etc/default/capemgr
 
 # also add to uEnv.txt even though this doesn't work until
 # the cape is pushed upstream. here now in anticipation of that
-echo "cape_enable=capemgr.enable_partno=SD-101C" >> $UENV_TXT
+echo "cape_enable=capemgr.enable_partno=$CAPENAME" >> $UENV_TXT
+
 
 
 echo "Installing Supporting Libraries"
@@ -177,8 +172,9 @@ make clean
 cd ../
 
 echo "Installing PRU Binaries and Assembler"
-cp install_files/pru_servo.bin /usr/bin
-cp install_files/pasm /usr/bin
+cp install_files/pru/pru_1_servo.bin /usr/bin
+cp install_files/pru/pru_0_encoder.bin /usr/bin
+cp install_files/pru/pasm /usr/bin
 
 
 echo "Installing examples, this will take a few minutes."

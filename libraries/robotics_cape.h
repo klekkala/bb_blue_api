@@ -59,6 +59,7 @@ either expressed or implied, of the FreeBSD Project.
 #include <simple_gpio/SimpleGPIO.h> // used for setting interrupt input pin
 #include <mmap/mmap_gpio_adc.h>	// used for fast gpio functions
 #include <mmap/mmap_pwmss.h>	// used for fast pwm functions
+#include <simple_pwm/simple_pwm.h>
 #include <imu/c_i2c.h>		// i2c lib
 #include <imu/mpu9150.h>	// general DMP library
 #include <imu/MPU6050.h> 	// gyro offset registers
