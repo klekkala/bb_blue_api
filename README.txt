@@ -1,3 +1,6 @@
+Beaglebone Blue API
+Kiran Kumar Lekkala
+
 Robotics Cape Rev D Installer for BeagleBone Black
 James Strawson - 2015
 
