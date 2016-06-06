@@ -401,7 +401,7 @@ fragment@31 {
  		I2C			
 ****************************************/	
 fragment@32 {
-	target = <&i2c1>;	/* i2c1 is numbered correctly */
+	target = <&i2c2>;	/* i2c1 is numbered correctly */
 	__overlay__ {
 		status = "okay";
 
@@ -412,6 +412,21 @@ fragment@32 {
 		#size-cells = <0>;
 
 		/* add any i2c devices on the bus here */
+		mpu6050@68 {
+		compatible = "invensense,mpu6050";
+		reg = <0x68>;
+		interrupt-parent = <&gpio-P9.25>;
+		interrupts = <18 1>;
+		mount-matrix = "-0.984807753012208",  /* x0 */
+		               "0",                   /* y0 */
+		               "-0.173648177666930",  /* z0 */
+		               "0",                   /* x1 */
+		               "-1",                  /* y1 */
+		               "0",                   /* z1 */
+		               "-0.173648177666930",  /* x2 */
+		               "0",                   /* y2 */
+		               "0.984807753012208";   /* z2 */
+	};
 	};
 };
 
