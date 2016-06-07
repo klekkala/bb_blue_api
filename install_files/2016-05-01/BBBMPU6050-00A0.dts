@@ -1,11 +1,5 @@
 /*
- * Copyright (C) 2013 CircuitCo
- *
- * Virtual cape for I2C2 on connector pins P9.19 P9.20
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 2 as
- * published by the Free Software Foundation.
+ * Custom overlay for MPU6050
  */
 /dts-v1/;
 /plugin/;
@@ -44,8 +38,7 @@
 		__overlay__ {
 			status = "okay";
 			pinctrl-names = "default";
-			pinctrl-0 = <&bb_i2cbb
-			2_pins>;
+			pinctrl-0 = <&bb_i2c2_pins>;
 
 			/* this is the configuration part */
 			clock-frequency = <400000>;
