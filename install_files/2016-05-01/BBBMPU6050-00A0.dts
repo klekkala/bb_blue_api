@@ -32,7 +32,7 @@
 				pinctrl-single,pins = <
 					0x178 0x73	/* i2c2_sda, SLEWCTRL_SLOW | INPUT_PULLUP | MODE3 */
 					0x17c 0x73	/* i2c2_scl, SLEWCTRL_SLOW | INPUT_PULLUP | MODE3 */
-					0x1AC 0x37	/*P9.25 MPU-9150 INTERRUPT IN*/
+					0x1ac 0x37	/*P9.25 MPU-9150 INTERRUPT IN*/
 				>;
 			};
 		};
