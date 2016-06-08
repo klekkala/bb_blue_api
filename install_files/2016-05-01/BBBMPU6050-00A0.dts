@@ -1,5 +1,6 @@
 /*
- * Custom overlay for MPU6050
+ * Custom overlay for MPU6050 for Beaglebone Blue
+ * Author: Kiran Kumar Lekkala
  */
 /dts-v1/;
 /plugin/;
@@ -16,7 +17,7 @@
 		/* the pin header uses */
 		"P9.19",	/* i2c2_sda */
 		"P9.20",	/* i2c2_scl */
-		"P9.25",	/*IMU_INT*/
+		"P9.25",	/* imu_interrupt*/
 		/* the hardware ip uses */
 		"i2c2";
 
@@ -27,7 +28,7 @@
 				pinctrl-single,pins = <
 					0x178 0x73	/* i2c2_sda, SLEWCTRL_SLOW | INPUT_PULLUP | MODE3 */
 					0x17c 0x73	/* i2c2_scl, SLEWCTRL_SLOW | INPUT_PULLUP | MODE3 */
-					0x1ac 0x37	/*P9.25 MPU-9150 INTERRUPT IN*/
+					0x1ac 0x37	/* i2c2_int, MPU-9150 INTERRUPT IN*/
 				>;
 			};
 		};
@@ -48,20 +49,12 @@
 
 			/* add any i2c devices on the bus here */
 
-			mpu6050@68 {
+			inv-mpu6050@68 {
 				compatible = "invensense,mpu6050";
 				reg = <0x68>;
+				orientation = <0xff 0 0 0 1 0 0 0 0xff>;
 				interrupt-parent = <&gpio3>;
 				interrupts = <21 1>;
-				mount-matrix = "-0.984807753012208",  /* x0 */
-		               "0",                   /* y0 */
-		               "-0.173648177666930",  /* z0 */
-		               "0",                   /* x1 */
-		               "-1",                  /* y1 */
-		               "0",                   /* z1 */
-		               "-0.173648177666930",  /* x2 */
-		               "0",                   /* y2 */
-		               "0.984807753012208";   /* z2 */
 	};
 		};
 	};
