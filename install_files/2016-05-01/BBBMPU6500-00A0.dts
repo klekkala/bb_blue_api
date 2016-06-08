@@ -1,5 +1,5 @@
 /*
- * Custom overlay for MPU6050 for Beaglebone Blue
+ * Custom overlay for MPU6500 for Beaglebone Blue
  * Author: Kiran Kumar Lekkala
  */
 /dts-v1/;
@@ -9,7 +9,7 @@
 	compatible = "ti,beaglebone", "ti,beaglebone-black", "ti,beaglebone-green";
 
 	/* identification */
-	part-number = "BBBMPU6050";
+	part-number = "BBBMPU6500";
 	version = "00A0";
 
 	/* state the resources this cape uses */
@@ -49,10 +49,9 @@
 
 			/* add any i2c devices on the bus here */
 
-			inv-mpu6050@68 {
-				compatible = "invensense,mpu6050";
-				reg = <0x68>;
-				orientation = <0xff 0 0 0 1 0 0 0 0xff>;
+			mpu6500@69 {
+				compatible = "invensense,mpu6500";
+				reg = <0x69>;
 				interrupt-parent = <&gpio3>;
 				interrupts = <21 1>;
 	};
