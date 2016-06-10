@@ -49,7 +49,7 @@
 
 			/* add any i2c devices on the bus here */
 
-			mpu6500@69 {
+			mpu6050@68 {
 				compatible = "invensense,mpu6500";
 				reg = <0x68>;
 				interrupt-parent = <&gpio3>;
