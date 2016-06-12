@@ -1,6 +1,4 @@
 /*
-Author: Kiran Kumar Lekkala
-Created: 8 June 2016
 Description: Unit testing API for IMU kernel driver
 */
 
@@ -10,13 +8,13 @@ Description: Unit testing API for IMU kernel driver
 #include <pthread.h>    // multi-threading
 #include <errno.h>		// pthread error codes
 
-#include <bb_blue.h>
+#include <../bb_blue.h>
 
 
 /**************************************
 * local function declarations
 ***************************************/
-int is_cape_loaded();
+//int is_cape_loaded();
 int (*imu_interrupt_func)();
 void* imu_interrupt_handler(void* ptr);
 
@@ -118,7 +116,8 @@ int setYGyroOffset(int16_t offset) {
 	uint16_t new = offset;
 	const unsigned char msb = (unsigned char)((new&0xff00)>>8);
 	const unsigned char lsb = (new&0x00ff);//get LSB
-	//printf("writing: 0x%x 0x%x 0x%x \n", new, msb, lsb);
+	infile = fopen("/sys/bus/iio/devices/iio:device0/in_gyro_matrix","w");
+
 	linux_i2c_write(MPU_ADDR, MPU6050_RA_YG_OFFS_USRH, 1, &msb);
 	return linux_i2c_write(MPU_ADDR, MPU6050_RA_YG_OFFS_USRL, 1, &lsb);
 }
@@ -212,4 +211,10 @@ void* imu_interrupt_handler(void* ptr){
 	}
 	gpio_fd_close(imu_gpio_fd);
 	return 0;
+}
+
+
+int main(){
+
+	
 }
