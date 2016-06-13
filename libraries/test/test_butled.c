@@ -1,7 +1,5 @@
 /*
-Author: Kiran Kumar Lekkala
-Created: 8 June 2016
-Description: Unit testing API for buttons
+Description: Unit testing API for buttons and leds
 */
 
 //#define DEBUG
