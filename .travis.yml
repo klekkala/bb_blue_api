@@ -3,14 +3,14 @@ language: c
 os:
   - linux
 
-
 before_install:
-
   - sudo apt-get update
 
-
 before_script:
+  - sudo apt-get update
+  - cd libraries/
+  - echo $(pwd)
 
 
 script:
-  echo $(ls)
+  - make
