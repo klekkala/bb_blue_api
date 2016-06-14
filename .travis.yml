@@ -1,3 +1,16 @@
-compiler:
-      - clang
-      - gcc
+language: c
+
+os:
+  - linux
+
+
+before_install:
+
+  - sudo apt-get update
+
+
+before_script:
+
+
+script:
+  echo $(ls)
