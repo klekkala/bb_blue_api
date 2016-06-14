@@ -15,10 +15,10 @@ Description: Unit testing API for buttons and leds
 #include <fcntl.h>
 #include <poll.h>
 
-#include "../bb_blue_api.h"
-#include "../sensor_config.h"
-#include "../useful_includes.h"
-#include "../simple_gpio/simple_gpio.h"// used for setting interrupt input pin
+#include "bb_blue_api.h"
+#include "sensor_config.h"
+#include "useful_includes.h"
+#include "simple_gpio/simple_gpio.h"// used for setting interrupt input pin
 
 
 /*******************************************************************************
@@ -597,41 +597,5 @@ button_state_t get_mode_button(){
 * instead of containing a null pointer
 *******************************************************************************/
 int null_func(){
-	return 0;
-}
-
-int on_pause_pressed(){
-	blink_led(GREEN, 10, 2);
-	return 0;
-}
-
-int on_pause_released(){
-
-}
-
-int on_mode_pressed(){
-	blink_led(RED, 10, 2);
-	return 0;
-}
-
-int on_mode_released(){
-
-}
-int main(){
-	initialize_led_handlers();
-	initialize_button_handlers();
-
-	//Assign your own functions to be called when events occur
-	set_pause_pressed_func(&on_pause_pressed);
-	set_pause_released_func(&on_pause_released);
-	set_mode_pressed_func(&on_mode_pressed);
-	set_mode_released_func(&on_mode_released);
-	printf("Press buttons to see response\n");
-	
-	//toggle leds till the program state changes
-	while(get_state()!=EXITING){
-		usleep(10000);
-	}
-
 	return 0;
 }
