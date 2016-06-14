@@ -603,7 +603,20 @@ int null_func(){
 
 int main(){
 	initialize_led_handlers();
-	blink_led(GREEN, 10, 2);
+	initialize_button_handlers();
+
+	//Assign your own functions to be called when events occur
+	set_pause_pressed_func(&on_pause_pressed);
+	set_pause_released_func(&on_pause_released);
+	set_mode_pressed_func(&on_mode_pressed);
+	set_mode_released_func(&on_mode_released);
+	
+	printf("Press buttons to see response\n");
+	
+	//toggle leds till the program state changes
+	while(get_state()!=EXITING){
+		usleep(10000);
+	}
 
 	return 0;
 }
