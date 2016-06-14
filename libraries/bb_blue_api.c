@@ -392,12 +392,3 @@ button_state_t get_mode_button(){
 		return PRESSED;
 	}
 }
-
-/*******************************************************************************
-* int null_func()
-* function pointers for events initialized to null_func()
-* instead of containing a null pointer
-*******************************************************************************/
-int null_func(){
-	return 0;
-}
