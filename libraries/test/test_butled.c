@@ -605,7 +605,16 @@ int on_pause_pressed(){
 	return 0;
 }
 
-void on_pause_released(){
+int on_pause_released(){
+
+}
+
+int on_mode_pressed(){
+	blink_led(RED, 10, 2);
+	return 0;
+}
+
+int on_mode_released(){
 
 }
 int main(){
@@ -615,6 +624,8 @@ int main(){
 	//Assign your own functions to be called when events occur
 	set_pause_pressed_func(&on_pause_pressed);
 	set_pause_released_func(&on_pause_released);
+	set_mode_pressed_func(&on_mode_pressed);
+	set_mode_released_func(&on_mode_released);
 	printf("Press buttons to see response\n");
 	
 	//toggle leds till the program state changes
