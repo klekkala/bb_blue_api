@@ -5,7 +5,7 @@ CC = gcc
 LINKER   := gcc
 TOUCH 	 := $(shell touch *)
 CFLAGS := -Wall -fsingle-precision-constant -fPIC
-LFLAGS	:= -lm -lrt -lpthread -shared -lprussdrvd
+LFLAGS	:= -lm -lrt -lpthread -shared
 
 # add -DI2C_DEBUG for debugging
 #DEFS = -DEMPL_TARGET_LINUX -DMPU9150 -DAK8975_SECONDARY
