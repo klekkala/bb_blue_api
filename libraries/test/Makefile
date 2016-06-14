@@ -1,66 +1,49 @@
-TARGET = robotics_cape.so
+# This is a general use makefile for robotics cape projects written in C.
+# Just change the target name to match your main source code filename.
+TARGET = blink
 
-SUBDIRS = $(shell find * -type d -print)
-CC = gcc
-LINKER   := gcc
+
+
 TOUCH 	 := $(shell touch *)
-CFLAGS := -Wall -fsingle-precision-constant -fPIC
-LFLAGS	:= -lm -lrt -lpthread -shared -lprussdrvd
+CC	:= gcc
+LINKER   := gcc -o
+CFLAGS	:= -c -Wall -g
+LFLAGS	:= -lm -lrt -lpthread -lbb_blue_api
 
-# add -DI2C_DEBUG for debugging
-#DEFS = -DEMPL_TARGET_LINUX -DMPU9150 -DAK8975_SECONDARY
-
-SOURCES := $(shell find ./ -name '*.c')
-INCLUDES := $(shell find ./ -name '*.h')
+SOURCES  := $(wildcard *.c)
+INCLUDES := $(wildcard *.h)
 OBJECTS  := $(SOURCES:$%.c=$%.o)
 RM := rm -f
-CP := cp
-INSTALL_DIR = /usr/lib/
-INCLUDE_DIR = /usr/include/
 
-all:$(TARGET)
-	
-	
+INSTALL_DIR = /usr/bin/
+
 # linking Objects
 $(TARGET): $(OBJECTS)
-	@$(LINKER) $(LFLAGS) -o $(TARGET) $(OBJECTS)
+	@$(LINKER) $(@) $(OBJECTS) $(LFLAGS)
 	@echo
 	@echo "Linking Complete"
-	
+
+
+# compiling command
 $(OBJECTS): %.o : %.c
-	@$(TOUCH) $(CC) $(CFLAGS) $(DEFS) -c $< -o $(@)
+	@$(TOUCH) $(CC) $(CFLAGS) -c $< -o $(@)
 	@echo "Compiled "$<" successfully!"
-
-
 
 
 # install to /usr/bin
 $(phony all) : $(TARGET)
 .PHONY: install
 
-install:
-	@echo "moving headers files to /usr/include"
-	@for f in $(includes) ; do \
-		$(CP) $$f $(INCLUDE_DIR) ; \
-	done
-	@ $(CP) *.h $(INCLUDE_DIR)
-	
-	$(MAKE)
-	@$(CP) $(TARGET) $(INSTALL_DIR)
-	@$(CP) $(OBJECTS) $(INSTALL_DIR)
-	@$(CP) pru/prussdrv.h $(INCLUDE_DIR)
-	@$(CP) pru/pruss_intc_mapping.h $(INCLUDE_DIR)
-	@$(CP) $(INSTALL_DIR)/$(TARGET) $(INSTALL_DIR)/lib$(TARGET)
-	@ldconfig
-	@echo "$(TARGET) installed to $(INSTALL_DIR)"
+install: $(all)
+	@$(MAKE)
+	@install -m 0755 $(TARGET) $(INSTALL_DIR)
+	@echo
+	@echo "Project "$(TARGET)" installed to $(INSTALL_DIR)"
 	@echo
 	
-
 clean:
-	@for dir in $(SUBDIRS) ; do \
-		$(RM) $$dir/*.o ; \
-	done
-	
-	@$(RM) *.o
-	@$(RM) *.so
+	@$(RM) $(OBJECTS)
+	@$(RM) $(TARGET)
 	@echo "Cleanup complete!"
+
+	
