@@ -24,7 +24,7 @@ IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 *******************************************************************************/
 
-#include "../robotics_cape.h"
+#include "../bb_blue_api.h"
 #include <math.h>
 
 float vector3DotProduct(float a[3], float b[3]){
