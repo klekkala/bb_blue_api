@@ -13,6 +13,8 @@
 #define ROBOTICS_CAPE
 
 #include <stdint.h> // for uint8_t types etc
+typedef struct timespec	timespec;
+typedef struct timeval timeval;
 
 /*******************************************************************************
 * INITIALIZATION AND CLEANUP
@@ -49,7 +51,8 @@ int cleanup_cape();		// call at the very end of main()
 * state to RUNNING to indicate to other threads that the program should now
 * behave in normal ongoing operational mode. Threads and loops should also
 * independently check for an EXITING state to know when to close and exit
-* cleanly when prompted by another thread.
+* cleanly when prompted by another thread. You may also call print_state()
+* to print the textual name of the state to the screen.
 *
 * All example programs use these functions. See the bare_minimum example 
 * for a skeleton outline.
@@ -61,8 +64,9 @@ typedef enum state_t {
 	EXITING
 } state_t;
 
-enum state_t get_state();
+state_t get_state();
 int set_state(state_t new_state);
+int print_state();
 
 
 /*******************************************************************************
@@ -136,7 +140,6 @@ int blink_led(led_t led, float hz, float period);
 * For simple tasks like pausing the robot, the user is encouraged to assign
 * their function to be called when the button is released as this provides 
 * a more natural user experience aligning with consumer product functionality.
-*
 * 
 * The user can also just do a basic call to get_pause_button_state() or
 * get_mode_buttom_state() which returns the enumerated type RELEASED or 
@@ -401,6 +404,7 @@ int send_servo_pulse_us_all(int us);
 ******************************************************************************/
 int   initialize_dsm2();
 int   is_new_dsm2_data();
+int   is_dsm2_active();
 int   set_new_dsm2_data_func(int (*func)(void));
 int   get_dsm2_ch_raw(int channel);
 float get_dsm2_ch_normalized(int channel);
@@ -495,7 +499,7 @@ typedef enum gyro_fsr_t {
 } gyro_fsr_t;
 
 typedef enum accel_dlpf_t {
-	ACCEL_DLPF_460,
+	ACCEL_DLPF_OFF,
 	ACCEL_DLPF_184,
 	ACCEL_DLPF_92,
 	ACCEL_DLPF_41,
@@ -505,7 +509,7 @@ typedef enum accel_dlpf_t {
 } accel_dlpf_t;
 
 typedef enum gyro_dlpf_t {
-	GYRO_DLPF_250,
+	GYRO_DLPF_OFF,
 	GYRO_DLPF_184,
 	GYRO_DLPF_92,
 	GYRO_DLPF_41,
@@ -514,6 +518,14 @@ typedef enum gyro_dlpf_t {
 	GYRO_DLPF_5
 } gyro_dlpf_t;
 
+typedef enum imu_orientation_t {
+	ORIENTATION_Z_UP 	= 136,
+	ORIENTATION_Z_DOWN 	= 396,
+	ORIENTATION_X_UP 	= 14,
+	ORIENTATION_X_DOWN 	= 266,
+	ORIENTATION_Y_UP 	= 112,
+	ORIENTATION_Y_DOWN 	= 336
+} imu_orientation_t;
 
 typedef struct imu_config_t {
 	// full scale ranges for sensors
@@ -529,8 +541,12 @@ typedef struct imu_config_t {
 	
 	// DMP settings, only used with DMP interrupt
 	int dmp_sample_rate;
-	signed char orientation[9]; //orientation matrix
+	imu_orientation_t orientation; //orientation matrix
+	// higher mix_factor means less weight the compass has on fused_euler
+	int compass_mix_factor; // must be >0
 	int dmp_interrupt_priority; // scheduler priority for handler
+	int show_warnings;	// set to 1 to enable showing of i2c_bus warnings
+
 } imu_config_t;
 
 typedef struct imu_data_t {
@@ -538,50 +554,70 @@ typedef struct imu_data_t {
 	float accel[3]; // units of m/s^2
 	float gyro[3];	// units of degrees/s
 	float mag[3];	// units of uT
-	float temp;		// units of degrees celcius
+	float temp;		// units of degrees Celsius
 	
 	// 16 bit raw adc readings from each sensor
 	int16_t raw_gyro[3];	
 	int16_t raw_accel[3];
 	
-	// FSR-derived ratios from raw to real units
+	// FSR-derived conversion ratios from raw to real units
 	float accel_to_ms2; // to m/s^2
 	float gyro_to_degs; // to degrees/s
-
-	// quaternion_t DMPQuat; 	// unitless
-	// quaternion_t fusedQuat; // unitless
-	// vector3d_t fusedEuler;  // units of degrees
-
-	// complementary filter constants used
-	// by imu_read_dmp
-	float lastDMPYaw;
-	float lastYaw;
 	
-	// steady state offsets loaded from calibration file
-	uint16_t rawGyroBias[3];
-	uint16_t rawAccelBias[3];
+	// everything below this line is available in DMP mode only
+	// quaternion and Euler angles from DMP based on ONLY Accel/Gyro
+	float dmp_quat[4]; 	// normalized quaternion
+	float dmp_euler[3];	// radians roll/pitch/yaw
 	
-	// magnetometer factory sensitivity adjustment values
-	float mag_adjust[3];
+	// If magnetometer is enabled in DMP mode, the following quaternion and 
+	// Euler angles will be available which add magnetometer data to filter
+	float fused_quat[4]; 	// normalized quaternion
+	float fused_euler[3]; 	// radians roll/pitch/yaw
+	float compass_heading;	// heading in radians based purely on magnetometer
 } imu_data_t;
  
+// General functions
+imu_config_t get_default_imu_config();
+int set_imu_config_to_defaults(imu_config_t *conf);
+int calibrate_gyro_routine();
+int power_off_imu();
 
 // one-shot sampling mode functions
-imu_config_t get_default_imu_config();
 int initialize_imu(imu_data_t *data, imu_config_t conf);
 int read_accel_data(imu_data_t *data);
 int read_gyro_data(imu_data_t *data);
 int read_mag_data(imu_data_t *data);
 int read_imu_temp(imu_data_t* data);
 
-// // interrupt-driven sampling mode functions
-// int initialize_imu_dmp(imu_data_t *data, imu_config_t conf);
-// int set_imu_interrupt_func(int (*func)(void), imu_data_t* data);
-// int stop_imu_interrupt_func();
+// interrupt-driven sampling mode functions
+int initialize_imu_dmp(imu_data_t *data, imu_config_t conf);
+int set_imu_interrupt_func(int (*func)(void));
+int stop_imu_interrupt_func();
+int was_last_read_successful();
+uint64_t micros_since_last_interrupt();
 
+/*******************************************************************************
+* BMP280 Barometer
+*
+* The robotics cape features a barometer for measuring altitude. 
+*
+* int initialize_barometer()
+*******************************************************************************/
+typedef enum bmp_oversample_t{
+	BMP_OVERSAMPLE_1,
+	BMP_OVERSAMPLE_2,
+	BMP_OVERSAMPLE_4,
+	BMP_OVERSAMPLE_8,
+	BMP_OVERSAMPLE_16
+} bmp_oversample_t;
 
-// reset IMU, use before re-initializing with different settings
-
+int initialize_barometer(bmp_oversample_t oversampling);
+int power_down_barometer();
+int read_barometer();
+float bmp_get_temperature_c();
+float bmp_get_pressure_pa();
+float bmp_get_altitude_m();
+int set_sea_level_pressure_pa(float pa);
 
 
 /*******************************************************************************
@@ -660,33 +696,38 @@ int i2c_send_byte(int bus, uint8_t data);
 
 
 
-// /*******************************************************************************
-// * SPI - Serial Peripheral Interface
-// *
-// * The Sitara's SPI1 bus is broken out on two JST SH 6-pin sockets
-// * labeled SPI1.1 and SPI1.2 These share clock and serial IO signals.
-// * However, each socket has its own slave select line allowing two
-// * 
-// *******************************************************************************/
-// int initialize_spi1(uint8_t mode, uint32_t speed);
+/*******************************************************************************
+* SPI - Serial Peripheral Interface
+*
+* The Sitara's SPI1 bus is broken out on two JST SH 6-pin sockets
+* labeled SPI1.1 and SPI1.2 These share clock and serial IO signals.
+* However, each socket has its own slave select line allowing two
+* 
+*******************************************************************************/
+int initialize_spi1(int mode, int speed_hz);
+int get_spi1_fd();
+int close_spi1();
 int select_spi1_slave(int slave);
 int deselect_spi1_slave(int slave);	
-// int spi1_send_bytes(uint8_t length, uint8_t* data);
-// int spi1_send_byte(uint8_t data);
-// unsigned char spi_read_reg(int fd, unsigned char reg_addr);
-// unsigned char spi_write_reg(int fd, unsigned char reg_addr);
+int spi1_send_bytes(char* data, int bytes);
+int spi1_read_bytes(char* data, int bytes);
+int spi1_write_reg_byte(char reg_addr, char data);
+char spi1_read_reg_byte(char reg_addr);
+int spi1_read_reg_bytes(char reg_addr, char* data, int bytes);
+int spi1_transfer(char* tx_data, int tx_bytes, char* rx_data);
 
 
 /*******************************************************************************
 * UART
 *******************************************************************************/
-int initialize_uart(int bus, int speed);
+int initialize_uart(int bus, int speed, float timeout);
 int close_uart(int bus);
 int get_uart_fd(int bus);
 int flush_uart(int bus);
 int uart_send_bytes(int bus, int bytes, char* data);
 int uart_send_byte(int bus, char data);
-int uart_read_bytes(int bus, int bytes, char* buf, int timeout_ms);
+int uart_read_bytes(int bus, int bytes, char* buf);
+int uart_read_line(int bus, int max_bytes, char* buf);
 
 
 /*******************************************************************************
@@ -707,15 +748,237 @@ int uart_read_bytes(int bus, int bytes, char* buf, int timeout_ms);
 int kill_robot();
 
 /*******************************************************************************
-* General use Functions
+* Useful Functions
+*
+* This is a collection of miscellaneous useful functions that are part of the
+* robotics cape library. These do not necessarily interact with hardware.
+*
+* @ int null_func()
+*
+* A simple function that returns 0. This exists so function pointers can be 
+* set to do nothing such as button and imu interrupt handlers.
+*
+* @ saturate_float(float* val, float min, float max)
+*
+* Modifies val to be bounded between between min and max. Returns 1 if 
+* saturation occurred, 0 if val was already in bound, and -1 if min was falsely
+* larger than max.
+*
+* @ char *byte_to_binary(char x)
+* 
+* This returns a string (char*) of '1' and '0' representing a character.
+* For example, print "00101010" with printf(byte_to_binary(42));
+*
+* @ timespec timespec_diff(timespec start, timespec end)
+* 
+* Returns the time difference between two timespec structs as another timespec.
+* Convenient for use with nanosleep() function and accurately timed loops.
+* Unlike timespec_sub defined in time.h, timespec_diff does not care which came 
+* first, A or B. A positive difference in time is always returned.
+*
+* @ uint64_t timespec_to_micros(timespec ts)
+* 
+* Returns a number of microseconds corresponding to a timespec struct.
+* Useful because timespecs are annoying.
+* 
+* @ uint64_t timeval_to_micros(timeval ts)
+* 
+* Returns a number of microseconds corresponding to a timespec struct.
+* Useful because timespecs are annoying.
+*
+* @ uint64_t micros_since_epoch()
+* 
+* handy function for getting current time in microseconds
+* so you don't have to deal with timespec structs
+*
+* @ int suppress_stdout(int (*func)(void))
+*
+* Executes a functiton func with all outputs to stdout suppressed. func must
+* take no arguments and must return an integer. Adapt this source to your
+* liking if you need to pass arguments. For example, if you have a function
+* int foo(), call it with supressed output to stdout as follows:
+* int ret = suppress_stdout(&foo);
+*
+* @ int suppress_stderr(int (*func)(void))
+* 
+* executes a functiton func with all outputs to stderr suppressed. func must
+* take no arguments and must return an integer. Adapt this source to your
+* liking if you need to pass arguments. For example, if you have a function
+* int foo(), call it with supressed output to stderr as follows:
+* int ret = suppress_stderr(&foo);
 *******************************************************************************/
+int null_func();
 int saturate_float(float* val, float min, float max);
-int null_func();	// good for making interrupt handlers do nothing
-char *byte_to_binary(unsigned char x); // for diagnostic prints
-typedef struct timespec	timespec;
-timespec diff(timespec start, timespec end); // subtract timespec structs 
-uint64_t microsSinceEpoch();
+char *byte_to_binary(unsigned char x);
+timespec timespec_diff(timespec A, timespec B);
+uint64_t timespec_to_micros(timespec ts);
+uint64_t timeval_to_micros(timeval tv);
+uint64_t micros_since_epoch();
+int suppress_stdout(int (*func)(void));
+int suppress_stderr(int (*func)(void));
 
 
+/*******************************************************************************
+* Vector and Quaternion Math
+*
+* These are useful for dealing with IMU orientation data and general vector math
+*******************************************************************************/
+// defines for index location within vector and quaternion arrays
+#define VEC3_X		0
+#define VEC3_Y		1
+#define VEC3_Z		2
+#define QUAT_W		0
+#define QUAT_X		1
+#define QUAT_Y		2
+#define QUAT_Z		3
 
-#endif
+float vector3DotProduct(float a[3], float b[3]);
+void vector3CrossProduct(float a[3], float b[3], float d[3]);
+float quaternionNorm(float q[4]);
+void normalizeQuaternion(float q[4]);
+void quaternionToEuler(float q[4], float v[3]);
+void eulerToQuaternion(float v[3], float q[4]);
+void tilt_compensate(float in[4], float tilt[4], float out[4]);
+void quaternionConjugate(float in[4], float out[4]);
+void quaternionMultiply(float a[4], float b[4], float out[4]);
+
+/*******************************************************************************
+* Ring Buffer
+*
+* Ring buffers are FIFO (first in first out) buffers of fixed length which
+* efficiently boot out the oldest value when full. They are particularly well
+* suited for storing the last n values in a discrete time filter.
+*
+* The user creates their own instance of a buffer and passes a pointer to the
+* these ring_buf functions to perform normal operations. 
+* @ int reset_ring_buf(ring_buf* buf)
+*
+* sets all values in the buffer to 0 and sets the buffer position back to 0
+*
+* @ int insert_new_ring_buf_value(ring_buf* buf, float val)
+* 
+* Puts a new float into the ring buffer. If the buffer was full then the oldest
+* value in the buffer is automatically removed.
+*
+* @ float get_ring_buf_value(ring_buf* buf, int position)
+*
+* returns the float which is 'position' steps behind the last value placed in
+* the buffer. If 'position' is given as 0 then the most recent value is
+* returned. 'Position' obviously can't be larger than buffer_size minus 1
+*******************************************************************************/
+#define RING_BUF_SIZE 32
+
+typedef struct ring_buf{
+	float data[RING_BUF_SIZE];
+	int index;
+} ring_buf;
+
+int reset_ring_buf(ring_buf* buf);
+int insert_new_ring_buf_value(ring_buf* buf, float val);
+float get_ring_buf_value(ring_buf* buf, int position);
+
+
+/*******************************************************************************
+* Discrete SISO Filter
+*
+* This is a collection of functions for generating and implementing discrete 
+* SISO filters for arbitrary transfer functions. 
+*
+* @ struct dicrete_filter
+*
+* This is the heart of the library. For each implemented filter the user must
+* create a single instance of a discrete_filter struct. Each instance contains
+* transfer function constants and
+* memory about IO 
+* data a discrete_filter instance has a fixed size but contains pointers to 
+* dynamic arrays thus it is best to generate an instance using one of the generate functions here
+*******************************************************************************/
+
+typedef struct discrete_filter{
+	int order;
+	float dt;
+	// input scaling factor usually =1, useful for fast controller tuning
+	float prescaler; 
+	float numerator[RING_BUF_SIZE];	// points to array of numerator constants
+	float denominator[RING_BUF_SIZE];	// points to array 
+	int saturation_en;
+	float saturation_min;
+	float saturation_max;
+	int saturation_flag;
+	ring_buf in_buf;
+	ring_buf out_buf;
+	
+	float last_input;
+	float last_output;
+} discrete_filter;
+
+
+/* 
+--- March Filter ---
+march the filter forward in time one step with new input data
+returns new output which could also be accessed with filter.current_output
+*/
+float march_filter(discrete_filter* filter, float new_input);
+
+
+/* 
+--- Saturate Filter ---
+limit the output of filter to be between min&max
+returns 1 if saturation was hit 
+returns 0 if output was within bounds
+*/
+int saturate_filter(discrete_filter* filter, float min, float max);
+
+/*
+--- Zero Filter ---
+reset all input and output history to 0
+*/
+int reset_filter(discrete_filter* filter);
+
+/*
+get_previous_input
+returns an input with offset 'steps'
+steps = 0 returns last input
+*/
+int get_previous_input(discrete_filter* filter, int steps);
+
+/*
+get_previous_output
+returns a previous output with offset 'steps'
+steps = 0 returns last output
+*/
+int get_previous_output(discrete_filter* filter, int steps);
+
+/*
+--- Generate Filter ---
+Dynamically allocate memory for a filter of specified order
+and set transfer function constants.
+Note: A normalized transfer function should have a leading 1 
+in the denominator but can be !=1 in this library
+*/
+discrete_filter generate_filter(int order, float dt,float numerator[],float denominator[]);
+
+						
+
+// time_constant is seconds to rise 63.4% 
+discrete_filter generateFirstOrderLowPass(float dt, float time_constant);
+
+// time_constant is seconds to decay 63.4% 
+discrete_filter generateFirstOrderHighPass(float dt, float time_constant);
+
+// integrator scaled to loop dt
+discrete_filter generateIntegrator(float dt);
+
+
+// discrete-time implementation of a parallel PID controller with derivative filter
+// similar to Matlab pid command
+//
+// N is the pole location for derivative filter. Must be greater than 2*DT
+// smaller N gives faster filter decay
+discrete_filter generatePID(float kp, float ki, float kd, float Tf, float dt);
+
+// print order, numerator, and denominator constants
+int print_filter_details(discrete_filter* filter);
+
+	
+#endif //ROBOTICS_CAPE
