@@ -7,23 +7,385 @@ Description: Unit testing API for buttons and leds
 #define _GNU_SOURCE 	// to enable macros in pthread
 #include <pthread.h>    // multi-threading
 #include <errno.h>		// pthread error codes
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <errno.h>
+#include <unistd.h>
+#include <fcntl.h>
+#include <poll.h>
 
-#include <bb_blue.h>
+#include "../bb_blue.h"
+#include "../sensor_config.h"
+#include "../useful_includes.h"
+#include "../simple_gpio/simple_gpio.h"// used for setting interrupt input pin
 
+
+/*******************************************************************************
+* Global Variables
+*******************************************************************************/
+enum state_t state = UNINITIALIZED;
+int pause_btn_state, mode_btn_state;
+static unsigned int *prusharedMem_32int_ptr;
+int pru_initialized; // set to 1 by initialize_cape, checked by cleanup_cape
+
+
+/*******************************************************************************
+* local function declarations
+*******************************************************************************/
+int is_cape_loaded();
 int initialize_button_handlers();
+int (*pause_released_func)();
+int (*pause_pressed_func)();
+int (*mode_released_func)();
+int (*mode_pressed_func)();
+int initialize_pru();
+void shutdown_signal_handler(int signo);
 
-/*********************************************************************************
+/*******************************************************************************
+* local thread function declarations
+*******************************************************************************/
+void* pause_pressed_handler(void* ptr);
+void* pause_released_handler(void* ptr);
+void* mode_pressed_handler(void* ptr);
+void* mode_released_handler(void* ptr);
+
+/*******************************************************************************
+* local thread structs
+*******************************************************************************/
+pthread_t pause_pressed_thread;
+pthread_t pause_released_thread;
+pthread_t mode_pressed_thread;
+pthread_t mode_released_thread;
+
+
+
+/*******************************************************************************
+*simple_gpio stuff
+**
+********************************************************************************/
+
+/****************************************************************
+ * gpio_export
+ ****************************************************************/
+int gpio_export(unsigned int gpio)
+{
+	int fd, len;
+	char buf[MAX_BUF];
+
+	fd = open(SYSFS_GPIO_DIR "/export", O_WRONLY);
+	//printf("%d\n", gpio);
+	if (fd < 0) {
+		perror("gpio/export");
+		return fd;
+	}
+	len = snprintf(buf, sizeof(buf), "%d", gpio);
+	write(fd, buf, len);
+	close(fd);
+
+	return 0;
+}
+
+/****************************************************************
+ * gpio_unexport
+ ****************************************************************/
+int gpio_unexport(unsigned int gpio)
+{
+	int fd, len;
+	char buf[MAX_BUF];
+
+	fd = open(SYSFS_GPIO_DIR "/unexport", O_WRONLY);
+	if (fd < 0) {
+		perror("gpio/export");
+		return fd;
+	}
+
+	len = snprintf(buf, sizeof(buf), "%d", gpio);
+	write(fd, buf, len);
+	close(fd);
+	return 0;
+}
+
+/****************************************************************
+ * gpio_set_dir
+ ****************************************************************/
+int gpio_set_dir(int gpio, PIN_DIRECTION out_flag)
+{
+	int fd;
+	char buf[MAX_BUF];
+	snprintf(buf, sizeof(buf), "/sys/class/gpio/gpio%i/direction", gpio);
+	fd = open(buf, O_WRONLY);
+	//printf("%d\n", gpio);
+	if (fd < 0) {
+		perror("gpio/direction");
+		return fd;
+	}
+
+	if (out_flag == OUTPUT_PIN)
+		write(fd, "out", 4);
+	else
+		write(fd, "in", 3);
+
+	close(fd);
+	return 0;
+}
+
+/****************************************************************
+ * gpio_set_value
+ ****************************************************************/
+int gpio_set_value(unsigned int gpio, PIN_VALUE value)
+{
+	int fd;
+	char buf[MAX_BUF];
+
+	snprintf(buf, sizeof(buf), SYSFS_GPIO_DIR "/gpio%d/value", gpio);
+
+	fd = open(buf, O_WRONLY);
+	if (fd < 0) {
+		perror("gpio/set-value");
+		return fd;
+	}
+
+	if (value==LOW)
+		write(fd, "0", 2);
+	else
+		write(fd, "1", 2);
+
+	close(fd);
+	return 0;
+}
+
+/****************************************************************
+ * gpio_get_value
+ ****************************************************************/
+int gpio_get_value(unsigned int gpio, int *value)
+{
+	int fd;
+	char buf[MAX_BUF];
+	char ch;
+
+	snprintf(buf, sizeof(buf), SYSFS_GPIO_DIR "/gpio%d/value", gpio);
+
+	fd = open(buf, O_RDONLY);
+	if (fd < 0) {
+		perror("gpio/get-value");
+		return fd;
+	}
+
+	read(fd, &ch, 1);
+
+	if (ch != '0') {
+		*value = 1;
+	} else {
+		*value = 0;
+	}
+
+	close(fd);
+	return 0;
+}
+
+
+/****************************************************************
+ * gpio_set_edge
+ ****************************************************************/
+
+int gpio_set_edge(unsigned int gpio, char *edge)
+{
+	int fd;
+	char buf[MAX_BUF];
+
+	snprintf(buf, sizeof(buf), SYSFS_GPIO_DIR "/gpio%d/edge", gpio);
+
+	fd = open(buf, O_WRONLY);
+	if (fd < 0) {
+		perror("gpio/set-edge");
+		return fd;
+	}
+
+	write(fd, edge, strlen(edge) + 1);
+	close(fd);
+	return 0;
+}
+
+/****************************************************************
+ * gpio_fd_open
+ ****************************************************************/
+
+int gpio_fd_open(unsigned int gpio)
+{
+	int fd;
+	char buf[MAX_BUF];
+
+	snprintf(buf, sizeof(buf), SYSFS_GPIO_DIR "/gpio%d/value", gpio);
+
+	fd = open(buf, O_RDONLY | O_NONBLOCK );
+	if (fd < 0) {
+		perror("gpio/fd_open");
+	}
+	return fd;
+}
+
+/****************************************************************
+ * gpio_fd_close
+ ****************************************************************/
+
+int gpio_fd_close(int fd)
+{
+	return close(fd);
+}
+
+
+/****************************************************************
+ * gpio_omap_mux_setup - Allow us to setup the omap mux mode for a pin
+ ****************************************************************/
+int gpio_omap_mux_setup(const char *omap_pin0_name, const char *mode)
+{
+	int fd;
+	char buf[MAX_BUF];
+	snprintf(buf, sizeof(buf), SYSFS_OMAP_MUX_DIR "%s", omap_pin0_name);
+	fd = open(buf, O_WRONLY);
+	if (fd < 0) {
+		perror("failed to open OMAP_MUX");
+		return fd;
+	}
+	write(fd, mode, strlen(mode) + 1);
+	close(fd);
+	return 0;
+}
+
+
+
+
+
+/*******************************************************************************
+* int initialize_cape()
+* sets up necessary hardware and software
+* should be the first thing your program calls
+*******************************************************************************/
+
+
+int initialize_led_handlers(){
+	// initialize io libs
+	printf("Initializing: ");
+	printf("GPIO");
+	fflush(stdout);
+
+	//export all GPIO output pins
+	gpio_export(RED_LED);
+	gpio_set_dir(RED_LED, OUTPUT_PIN);
+	gpio_export(GRN_LED);
+	gpio_set_dir(GRN_LED, OUTPUT_PIN);
+}
+
+/*******************************************************************************
+* enum state_t get_state()
+* returns the high-level robot state variable
+* use this for managing how your threads start and stop
+*******************************************************************************/
+enum state_t get_state(){
+	return state;
+}
+
+
+/*******************************************************************************
+* int set_state(enum state_t new_state)
+* sets the high-level robot state variable
+* use this for managing how your threads start and stop
+*******************************************************************************/
+int set_state(enum state_t new_state){
+	state = new_state;
+	return 0;
+}
+
+
+
+
+/*******************************************************************************
+* blink_led()
+*	
+* Flash an LED at a set frequency for a finite period of time.
+* This is a blocking call and only returns after flashing.
+*******************************************************************************/
+int blink_led(led_t led, float hz, float period){
+	const int delay_us = 1000000.0/(2.0*hz); 
+	const int blinks = period*2.0*hz;
+	int i;
+	int toggle = 0;
+	
+	for(i=0;i<blinks;i++){
+		toggle = !toggle;
+		if(get_state()==EXITING) break;
+		set_led(led,toggle);
+		// wait for next blink
+		usleep(delay_us);
+	}
+	
+	set_led(led, 0); // make sure it is left off
+	return 0;
+}
+
+/*******************************************************************************
+* @ int set_led(led_t led, int state)
+* 
+* turn on or off the green or red LED on robotics cape
+* if state is 0, turn led off, otherwise on.
+* we suggest using the names HIGH or LOW
+*******************************************************************************/
+int set_led(led_t led, int state){
+	int val;
+	if(state) val = HIGH;
+	else val = LOW;
+	
+	switch(led){
+	case GREEN:
+		return gpio_set_value(GRN_LED, val);
+		break;
+	case RED:
+		return gpio_set_value(RED_LED, val);
+		break;
+	default:
+		printf("LED must be GREEN or RED\n");
+		break;
+	}
+	return -1;
+}
+
+/*******************************************************************************
+* int get_led_state(led_t led)
+* 
+* returns the state of the green or red LED on robotics cape
+* state is LOW(0), or HIGH(1)
+*******************************************************************************/
+int get_led_state(led_t led){
+	int ret= -1;
+	switch(led){
+	case GREEN:
+		gpio_get_value(GRN_LED, &ret);
+		break;
+	case RED:
+		gpio_get_value(RED_LED, &ret);
+		break;
+	default:
+		printf("LED must be GREEN or RED\n");
+		ret = -1;
+		break;
+	}
+	return ret;
+}
+
+
+/*******************************************************************************
 *	int initialize_button_interrups()
 *
 *	start 4 threads to handle 4 interrupt routines for pressing and
 *	releasing the two buttons.
-**********************************************************************************/
+*******************************************************************************/
 int initialize_button_handlers(){
 	
 	#ifdef DEBUG
 	printf("setting up mode & pause gpio pins\n");
 	#endif
-	//set up mode pin
+	//set up mode pi
 	if(gpio_export(MODE_BTN)){
 		printf("can't export gpio %d \n", MODE_BTN);
 		return (-1);
@@ -49,34 +411,35 @@ int initialize_button_handlers(){
 	pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
    
 	set_pause_pressed_func(&null_func);
-	set_pause_unpressed_func(&null_func);
+	set_pause_released_func(&null_func);
 	set_mode_pressed_func(&null_func);
-	set_mode_unpressed_func(&null_func);
+	set_mode_released_func(&null_func);
 	
 	
 	pthread_create(&pause_pressed_thread, &attr,			 \
 				pause_pressed_handler, (void*) NULL);
-	pthread_create(&pause_unpressed_thread, &attr,			 \
-				pause_unpressed_handler, (void*) NULL);
+	pthread_create(&pause_released_thread, &attr,			 \
+				pause_released_handler, (void*) NULL);
 	pthread_create(&mode_pressed_thread, &attr,			 \
 					mode_pressed_handler, (void*) NULL);
-	pthread_create(&mode_unpressed_thread, &attr,			 \
-					mode_unpressed_handler, (void*) NULL);
+	pthread_create(&mode_released_thread, &attr,			 \
+					mode_released_handler, (void*) NULL);
 	
 	// apply medium priority to all threads
 	pthread_setschedparam(pause_pressed_thread, SCHED_FIFO, &params);
-	pthread_setschedparam(pause_unpressed_thread, SCHED_FIFO, &params);
+	pthread_setschedparam(pause_released_thread, SCHED_FIFO, &params);
 	pthread_setschedparam(mode_pressed_thread, SCHED_FIFO, &params);
-	pthread_setschedparam(mode_unpressed_thread, SCHED_FIFO, &params);
+	pthread_setschedparam(mode_released_thread, SCHED_FIFO, &params);
 	 
 	return 0;
 }
 
-/******************************************************************
+
+/*******************************************************************************
 *	void* pause_pressed_handler(void* ptr)
 * 
 *	wait on falling edge of pause button
-*******************************************************************/
+*******************************************************************************/
 void* pause_pressed_handler(void* ptr){
 	struct pollfd fdset[1];
 	char buf[MAX_BUF];
@@ -90,7 +453,7 @@ void* pause_pressed_handler(void* ptr){
 		if (fdset[0].revents & POLLPRI) {
 			lseek(fdset[0].fd, 0, SEEK_SET);  
 			read(fdset[0].fd, buf, MAX_BUF);
-			if(get_pause_button_state()==PRESSED){
+			if(get_pause_button()==PRESSED){
 				pause_pressed_func(); 
 			}
 		}
@@ -99,12 +462,13 @@ void* pause_pressed_handler(void* ptr){
 	return 0;
 }
 
-/******************************************************************
-*	void* pause_unpressed_handler(void* ptr) 
+
+/*******************************************************************************
+* @ void* pause_released_handler(void* ptr) 
 *
-*	wait on rising edge of pause button
-*******************************************************************/
-void* pause_unpressed_handler(void* ptr){
+* wait on rising edge of pause button
+*******************************************************************************/
+void* pause_released_handler(void* ptr){
 	struct pollfd fdset[1];
 	char buf[MAX_BUF];
 	int gpio_fd = gpio_fd_open(PAUSE_BTN);
@@ -117,8 +481,8 @@ void* pause_unpressed_handler(void* ptr){
 		if (fdset[0].revents & POLLPRI) {
 			lseek(fdset[0].fd, 0, SEEK_SET);  
 			read(fdset[0].fd, buf, MAX_BUF);
-			if(get_pause_button_state()==UNPRESSED){
-				pause_unpressed_func(); 
+			if(get_pause_button()==RELEASED){
+				pause_released_func(); 
 			}
 		}
 	}
@@ -126,10 +490,10 @@ void* pause_unpressed_handler(void* ptr){
 	return 0;
 }
 
-/******************************************************************
+/*******************************************************************************
 *	void* mode_pressed_handler(void* ptr) 
 *	wait on falling edge of mode button
-*******************************************************************/
+*******************************************************************************/
 void* mode_pressed_handler(void* ptr){
 	struct pollfd fdset[1];
 	char buf[MAX_BUF];
@@ -143,7 +507,7 @@ void* mode_pressed_handler(void* ptr){
 		if (fdset[0].revents & POLLPRI) {
 			lseek(fdset[0].fd, 0, SEEK_SET);  
 			read(fdset[0].fd, buf, MAX_BUF);
-			if(get_mode_button_state()==PRESSED){
+			if(get_mode_button()==PRESSED){
 				mode_pressed_func(); 
 			}
 		}
@@ -152,11 +516,11 @@ void* mode_pressed_handler(void* ptr){
 	return 0;
 }
 
-/******************************************************************
-*	void* mode_unpressed_handler(void* ptr) 
+/*******************************************************************************
+*	void* mode_released_handler(void* ptr) 
 *	wait on rising edge of mode button
-*******************************************************************/
-void* mode_unpressed_handler(void* ptr){
+*******************************************************************************/
+void* mode_released_handler(void* ptr){
 	struct pollfd fdset[1];
 	char buf[MAX_BUF];
 	int gpio_fd = gpio_fd_open(MODE_BTN);
@@ -169,8 +533,8 @@ void* mode_unpressed_handler(void* ptr){
 		if (fdset[0].revents & POLLPRI) {
 			lseek(fdset[0].fd, 0, SEEK_SET);  
 			read(fdset[0].fd, buf, MAX_BUF);
-			if(get_mode_button_state()==UNPRESSED){
-				mode_unpressed_func(); 
+			if(get_mode_button()==RELEASED){
+				mode_released_func(); 
 			}
 		}
 	}
@@ -178,37 +542,68 @@ void* mode_unpressed_handler(void* ptr){
 	return 0;
 }
 
+/*******************************************************************************
+*	button function assignments
+*******************************************************************************/
 int set_pause_pressed_func(int (*func)(void)){
 	pause_pressed_func = func;
 	return 0;
 }
-int set_pause_unpressed_func(int (*func)(void)){
-	pause_unpressed_func = func;
+int set_pause_released_func(int (*func)(void)){
+	pause_released_func = func;
 	return 0;
 }
 int set_mode_pressed_func(int (*func)(void)){
 	mode_pressed_func = func;
 	return 0;
 }
-int set_mode_unpressed_func(int (*func)(void)){
-	mode_unpressed_func = func;
+int set_mode_released_func(int (*func)(void)){
+	mode_released_func = func;
 	return 0;
 }
 
-int get_pause_button_state(){
-	if(digitalRead(PAUSE_BTN)==HIGH){
-		return UNPRESSED;
+/*******************************************************************************
+*	button_state_t get_pause_button()
+*******************************************************************************/
+button_state_t get_pause_button(){
+
+	int ret=-1;
+	gpio_get_value(PAUSE_BTN, &ret);
+	if(ret==HIGH){
+		return RELEASED;
 	}
 	else{
 		return PRESSED;
 	}
 }
 
-int get_mode_button_state(){
-	if(digitalRead(MODE_BTN)==HIGH){
-		return UNPRESSED;
+/********************************************************************************
+*	button_state_t get_mode_button()
+*******************************************************************************/
+button_state_t get_mode_button(){
+	int ret=-1;
+	gpio_get_value(MODE_BTN, &ret);
+	if(ret==HIGH){
+		return RELEASED;
 	}
 	else{
 		return PRESSED;
 	}
+}
+
+/*******************************************************************************
+* int null_func()
+* function pointers for events initialized to null_func()
+* instead of containing a null pointer
+*******************************************************************************/
+int null_func(){
+	return 0;
+}
+
+
+int main(){
+	initialize_led_handlers();
+	blink_led(GREEN, 10, 2);
+
+	return 0;
 }
