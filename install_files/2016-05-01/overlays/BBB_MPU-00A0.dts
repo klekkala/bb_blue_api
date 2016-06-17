@@ -9,7 +9,7 @@
 	compatible = "ti,beaglebone", "ti,beaglebone-black", "ti,beaglebone-green";
 
 	/* identification */
-	part-number = "BBBMPU6500";
+	part-number = "BBB_MPU";
 	version = "00A0";
 
 	/* state the resources this cape uses */
@@ -49,9 +49,9 @@
 
 			/* add any i2c devices on the bus here */
 
-			mpu6500@69 {
+			mpu6500@68 {
 				compatible = "invensense,mpu6500";
-				reg = <0x69>;
+				reg = <0x68>;
 				interrupt-parent = <&gpio3>;
 				interrupts = <21 1>;
 	};

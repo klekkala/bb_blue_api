@@ -9,7 +9,7 @@
 	compatible = "ti,beaglebone", "ti,beaglebone-black", "ti,beaglebone-green";
 
 	/* identification */
-	part-number = "BBBBMP280";
+	part-number = "BBB_BMP280";
 	version = "00A0";
 
 	/* state the resources this cape uses */
@@ -47,7 +47,7 @@
 
 			/* add any i2c devices on the bus here */
 
-			mpu6500@69 {
+			bmp280@77 {
 				compatible = "bmp280";
 				reg = <0x77>;
 	};
