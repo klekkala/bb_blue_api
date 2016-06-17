@@ -6,9 +6,10 @@
 * Credit to Kris Winer most of the framework and register definitions.
 *******************************************************************************/
 
-#include "../bb_blue_api.h"
+#include "../robotics_cape.h"
 #include "../useful_includes.h"
 #include "../simple_gpio/simple_gpio.h"
+#include "mpu9250_defs.h"
 #include "dmp_firmware.h"
 #include "dmpKey.h"
 
@@ -235,14 +236,22 @@ int read_gyro_data(imu_data_t *data){
 	// new register data stored here
 	uint8_t raw[6];
 	
-	// set the device address
-	i2c_set_device_address(IMU_BUS, IMU_ADDR);
-	
-	 // Read the six raw data registers into data array
-	if(i2c_read_bytes(IMU_BUS, GYRO_XOUT_H, 6, &raw[0])<0){
-		return -1;
+	int fd;
+	char buf[MAX_BUF];
+	char ch;
+	snprintf(buf, sizeof(buf), SYSFS_IMU_DIR "in_anglvel_x_raw",);
+	snprintf(buf, sizeof(buf), SYSFS_IMU_DIR "in_anglvel_y_raw",);
+	snprintf(buf, sizeof(buf), SYSFS_IMU_DIR "in_anglvel_z_raw",);
+
+	fd = open(buf, O_RDONLY);
+	if (fd < 0) {
+		perror("in_angelvel error");
+		return fd;
 	}
-	 
+
+	read(fd, &raw, 1);
+	close(fd);
+
 	// Turn the MSB and LSB into a signed 16-bit value
 	data->raw_gyro[0] = (int16_t)(((int16_t)raw[0]<<8)|raw[1]);
 	data->raw_gyro[1] = (int16_t)(((int16_t)raw[2]<<8)|raw[3]);
@@ -1945,8 +1954,3 @@ int read_dmp_fifo(){
    // dest2[1] = (float)accel_bias[1]/(float)accelsensitivity;
    // dest2[2] = (float)accel_bias[2]/(float)accelsensitivity;
 // }
-
-
-
-
-
