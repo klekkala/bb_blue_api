@@ -6,9 +6,10 @@
 * Credit to Kris Winer most of the framework and register definitions.
 *******************************************************************************/
 
-#include "../bb_blue_api.h"
+#include "../robotics_cape.h"
 #include "../useful_includes.h"
 #include "../simple_gpio/simple_gpio.h"
+#include "mpu9250_defs.h"
 #include "dmp_firmware.h"
 #include "dmpKey.h"
 
