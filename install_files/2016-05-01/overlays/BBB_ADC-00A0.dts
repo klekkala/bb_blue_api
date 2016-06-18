@@ -7,8 +7,6 @@
 /dts-v1/;
 /plugin/;
 
-#include "am33xx.dtsi"
-#include "am335x-bone-common.dtsi"
 / {
 	compatible = "ti,beaglebone", "ti,beaglebone-black", "ti,beaglebone-green";
 
@@ -31,7 +29,7 @@
 		__overlay__ {
 
 			status = "okay";
-			&am335x_adc {
+			adc {
     		ti,adc-channels = <0 1 2 3>;
 			};
 		};
