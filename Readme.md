@@ -18,24 +18,65 @@ More info and detailed approach on how these sensors can be installed on the 4.4
 
 ###Library functions
 
-`int pruss_write(unsigned const int mem_name, int wordoffset, int *data, size_t bytelength)` 
+`int initialize_board();` 
 
-Writes buffer pointed at by 'data' pointer to PRU memory.  
-@mem_name : can take  PRU_DRAM0 / PRU_DRAM1 / PRU_SHRAM as values  
-@wordoffset : offset within specified memory type.  
-@bytelength : length of data to be copied (in bytes).  
+initializes beaglebone blue by loading and initializing the necessary variables.
 
-Returns 0 on success.  
+Returns 0 on success.     
 
 ___
 
 `int initialize_imu(int sample_rate, signed char orientation[9]);` 
 
 initializes the imu(mpu9250) with a sample rate and an initial 3X3 orientation matrix
-@sample_rate : takes in the any of the available sample-rates supported by MPU-9250 
+@sample_rate : takes in any of the available sample-rates supported by MPU-9250 
 @orientation : Initial 3X3 orientation matrix 
 
 Returns 0 on success.  
+
+___
+
+`int read_accel_data(int16_t offset);`  
+
+Send user provided sysevent to PRU INTC.  
+
+@sysevent : Sysevent number ( 0 – 63 )  
+
+Returns 0 on success.  
+
+___
+
+`int read_gyro_data(int16_t offset);` 
+
+@pru_num : PRU core id ( 0 or 1 )  
+
+Returns true if specified core is powered up. Otherwise false.  
+
+___
+
+`int read_mag_data(int16_t offset);` 
+
+Sets the Gyro Offset for the MPU-9250
+
+@offset : Offset value
+
+___
+
+`int read_imu_temp();`
+
+Reads the temperature values given by the MPU-9250  
+
+Returns the read temperature on success
+
+___
+
+`int set_imu_interrupt_func(int(*func)(void));`
+
+Shutdown PRU core.
+
+@pru_num: PRU0 / PRU1  
+
+Returns 0 on success
 
 ___
 
@@ -59,12 +100,9 @@ ___
 
 `int setZGyroOffset(int16_t offset);` 
 
-This function can either be blocking or non-blocking depending on timeout provided by user ( in libpru.h )  
+Sets the Gyro Offset for the MPU-9250
 
-@hostevt : EVTOUT0 – EVTOUT7  
-@callback : user provided callback function. Host event int is argument. No return.  
-@TIMEOUT (in libpru.h): -1 for indefinite block  
-						>0 wait time before releasing poll  
+@offset : Offset value
 
 ___
 
@@ -92,9 +130,7 @@ ___
 
 `int initialize_baro(void);`  
 
-Send user provided sysevent to PRU INTC.  
-
-@sysevent : Sysevent number ( 0 – 63 )  
+initializes the BMP280 pressure sensor. 
 
 Returns 0 on success.  
 
@@ -102,31 +138,27 @@ ___
 
 `float get_pressure(void);` 
 
-@pru_num : PRU core id ( 0 or 1 )  
 
-Returns true if specified core is powered up. Otherwise false.  
+Returns the read pressure from the sensor on success.  
 
 ___
 
 `float get_altitude(float pressure, float baseline);` 
 
-This function can either be blocking or non-blocking depending on timeout provided by user ( in libpru.h )  
+Upon given the ground level baseline and the pressure at a specific altitude, it returns the altitude value given by the sensor.  
 
-@hostevt : EVTOUT0 – EVTOUT7  
-@callback : user provided callback function. Host event int is argument. No return.  
-@TIMEOUT (in libpru.h): -1 for indefinite block  
-						>0 wait time before releasing poll  
+@pressure : pressure value at a specific altitude 
+@baseline : pressure value at the ground level  
 
 ___
 
 `int get_adc_raw(int p)`
 
-Boots the PRU core.  
+Read in from an analog pin with oneshot mode 
 
-@fwname : path to PRU firmware  
-@pru_num: PRU0 / PRU1  
+@p : Value of the analog pin(0, 1, 2, 3)  
 
-Returns 0 on success
+Returns the raw voltage value on success
 
 ___
 
@@ -141,19 +173,17 @@ Returns 0 on success
 
 `float get_battery_voltage()`  
 
-Send user provided sysevent to PRU INTC.  
+Get the 2-cell LiPo battery voltage value connected to the board.
 
-@sysevent : Sysevent number ( 0 – 63 )  
-
-Returns 0 on success.  
+Returns the value of the voltage on success.  
 
 ___
 
 `float get_dc_jack_voltage()` 
 
-@pru_num : PRU core id ( 0 or 1 )  
+Gets the dc voltage supplied to the jack 
 
-Returns true if specified core is powered up. Otherwise false.  
+Returns the value of the dc voltage on success. 
 
 ___
 
@@ -240,11 +270,21 @@ Returns 0 on success
 
 ___
 
+
+`int blink_led(led_t led, float hz, float period)` 
+
+blinks the specificed led for a frequency of `hz` and a period of `period`
+@hz : Frequency of the led which should be blinked(in Hz)
+@period : period of the led to which it should be blinked(in sec)
+
+___
+
 `int set_motor(int motor, float duty)`  
 
-Send user provided sysevent to PRU INTC.  
+set a motor direction and power motor is from 1 to 4, duty is from -1.0 to +1.0 
 
-@sysevent : Sysevent number ( 0 – 63 )  
+@motor : Sysevent number ( 0 – 63 )
+@duty : Sysevent number ( 0 – 63 )  
 
 Returns 0 on success.  
 
@@ -252,20 +292,21 @@ ___
 
 `int set_motor_all(float duty)` 
 
-@pru_num : PRU core id ( 0 or 1 )  
+applies the same duty cycle argument to all 4 motors
 
-Returns true if specified core is powered up. Otherwise false.  
+@duty : duty cycle of the motor which needs to be set  
 
 ___
 
 `int set_motor_free_spin(int motor)` 
 
 This puts one or all motor outputs in high-impedance state which lets the motor spin freely as if it wasn't connected to anything.
- 
+
+@motor : id of teh motor which needs to be put to free-spin
 
 ___
 
-`int set_motor_free_spin_all` 
+`int set_motor_free_spin_all()` 
 
 set_motor_free_spin to all the motors
 
@@ -282,11 +323,6 @@ ___
 `int set_motor_brake_all()` 
 
 sets motor brake to all the motors
-
-@hostevt : EVTOUT0 – EVTOUT7  
-@callback : user provided callback function. Host event int is argument. No return.  
-@TIMEOUT (in libpru.h): -1 for indefinite block  
-						>0 wait time before releasing poll  
 
 ___
 
