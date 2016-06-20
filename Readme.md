@@ -189,31 +189,30 @@ ___
 
 `int set_led(led_t led, int state)` 
 
-This function can either be blocking or non-blocking depending on timeout provided by user ( in libpru.h )  
+Sets the state of the LED on the board
 
-@hostevt : EVTOUT0 – EVTOUT7  
-@callback : user provided callback function. Host event int is argument. No return.  
-@TIMEOUT (in libpru.h): -1 for indefinite block  
-						>0 wait time before releasing poll  
+@led : Type of led which either red or green
+@state : State of the led it should be in, which is 1 or 0
+
+Returns 0 if success
 
 ___
 
 `int get_led_state(led_t led)`
 
-Boots the PRU core.  
+Gets the state of the given led
 
-@fwname : path to PRU firmware  
-@pru_num: PRU0 / PRU1  
+@p : Value of the analog pin(0, 1, 2, 3) 
 
-Returns 0 on success
+Returns 0 if it is off or returns 1 if on
 
 ___
 
 `int set_pause_pressed_func(int (*func)(void))`
 
-Shutdown PRU core.
+Callback function to goto the given function in `func` when the pause button is pressed
 
-@pru_num: PRU0 / PRU1  
+@func: function which the callback function should access
 
 Returns 0 on success
 
@@ -222,39 +221,36 @@ ___
 
 `int set_pause_unpressed_func(int (*func)(void))`  
 
-Send user provided sysevent to PRU INTC.  
+Callback function to goto the given function in `func` when the pause button is unpressed
 
-@sysevent : Sysevent number ( 0 – 63 )  
+@func: function which the callback function should access
 
-Returns 0 on success.  
+Returns 0 on success 
 
 ___
 
 `int set_mode_pressed_func(int (*func)(void))` 
 
-@pru_num : PRU core id ( 0 or 1 )  
+Callback function to goto the given function in `func` when the mode button is pressed
 
-Returns true if specified core is powered up. Otherwise false.  
+@func: function which the callback function should access
 
+Returns 0 on success
 ___
 
 `int set_mode_unpressed_func(int (*func)(void))` 
 
-This function can either be blocking or non-blocking depending on timeout provided by user ( in libpru.h )  
+Callback function to goto the given function in `func` when the mode button is unpressed
 
-@hostevt : EVTOUT0 – EVTOUT7  
-@callback : user provided callback function. Host event int is argument. No return.  
-@TIMEOUT (in libpru.h): -1 for indefinite block  
-						>0 wait time before releasing poll  
+@func: function which the callback function should access
+
+Returns 0 on success 
 
 ___
 
 `int get_pause_button_state()`
 
-Boots the PRU core.  
-
-@fwname : path to PRU firmware  
-@pru_num: PRU0 / PRU1  
+Returns the present state of the pause button.
 
 Returns 0 on success
 
@@ -262,9 +258,7 @@ ___
 
 `int get_mode_button_state()`
 
-Shutdown PRU core.
-
-@pru_num: PRU0 / PRU1  
+Returns the present state of the pause button.
 
 Returns 0 on success
 
