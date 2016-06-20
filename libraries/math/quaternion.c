@@ -24,8 +24,12 @@ IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 *******************************************************************************/
 
-#include "../bb_blue_api.h"
+#include "../robotics_cape.h"
 #include <math.h>
+
+#define VEC3_X		0
+#define VEC3_Y		1
+#define VEC3_Z		2
 
 float vector3DotProduct(float a[3], float b[3]){
 	return a[VEC3_X] * b[VEC3_X] + a[VEC3_Y] * b[VEC3_Y] + a[VEC3_Z] * b[VEC3_Z];  
@@ -43,7 +47,7 @@ float quaternionNorm(float q[4]){
 				q[QUAT_Y] * q[QUAT_Y] + q[QUAT_Z] * q[QUAT_Z]);
 }
 
-void quaternionNormalize(float q[4]){
+void normalizeQuaternion(float q[4]){
 	float length = quaternionNorm(q);
 
 	if (length == 0)
@@ -55,7 +59,7 @@ void quaternionNormalize(float q[4]){
 	q[QUAT_Z] /= length;
 }
 
-void quaternionToEuler(float q[4], float v[3]){
+void quaternionToTaitBryan(float q[4], float v[3]){
 	// fix roll near poles with this tolerance
 	float pole = (float)M_PI / 2.0f - 0.05f;
 
@@ -70,7 +74,7 @@ void quaternionToEuler(float q[4], float v[3]){
 					1.0f - 2.0f * (q[QUAT_Y] * q[QUAT_Y] + q[QUAT_Z] * q[QUAT_Z]));
 }
 
-void eulerToQuaternion(float v[3], float q[4]){
+void TaitBryanToQuaternion(float v[3], float q[4]){
 	float cosX2 = cosf(v[VEC3_X] / 2.0f);
 	float sinX2 = sinf(v[VEC3_X] / 2.0f);
 	float cosY2 = cosf(v[VEC3_Y] / 2.0f);
@@ -83,9 +87,17 @@ void eulerToQuaternion(float v[3], float q[4]){
 	q[QUAT_Y] = cosX2 * sinY2 * cosZ2 + sinX2 * cosY2 * sinZ2;
 	q[QUAT_Z] = cosX2 * cosY2 * sinZ2 - sinX2 * sinY2 * cosZ2;
 
-	quaternionNormalize(q);
+	normalizeQuaternion(q);
 }
 
+void tilt_compensate(float in[4], float tilt[4], float out[4]){
+	float tiltConjugate[4];
+	float tempQ[4];
+
+	quaternionConjugate(tilt, tiltConjugate);
+	quaternionMultiply(in, tiltConjugate, tempQ);
+	quaternionMultiply(tilt, tempQ, out);
+}
 
 void quaternionConjugate(float in[4], float out[4]){
 	out[QUAT_W] = in[QUAT_W];
@@ -109,8 +121,8 @@ void quaternionMultiply(float a[4], float b[4], float out[4]){
 	dotAB = vector3DotProduct(va, vb);
 	vector3CrossProduct(va, vb, crossAB);
 	
-	out[QUAT_W] = a[QUAT_W] * b[QUAT_W] - dotAB;
-	out[QUAT_X] = a[QUAT_W] * vb[VEC3_X] + b[QUAT_W] * va[VEC3_X] + crossAB[VEC3_X];
-	out[QUAT_Y] = a[QUAT_W] * vb[VEC3_Y] + b[QUAT_W] * va[VEC3_Y] + crossAB[VEC3_Y];
-	out[QUAT_Z] = a[QUAT_W] * vb[VEC3_Z] + b[QUAT_W] * va[VEC3_Z] + crossAB[VEC3_Z];
+	out[QUAT_W] = a[QUAT_W]*b[QUAT_W]-dotAB;
+	out[QUAT_X] = a[QUAT_W]*vb[VEC3_X]+b[QUAT_W]*va[VEC3_X]+crossAB[VEC3_X];
+	out[QUAT_Y] = a[QUAT_W]*vb[VEC3_Y]+b[QUAT_W]*va[VEC3_Y]+crossAB[VEC3_Y];
+	out[QUAT_Z] = a[QUAT_W]*vb[VEC3_Z]+b[QUAT_W]*va[VEC3_Z]+crossAB[VEC3_Z];
 }
