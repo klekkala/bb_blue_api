@@ -1,0 +1,121 @@
+/dts-v1/;
+/plugin/; 
+
+/ {
+    compatible = "ti,beaglebone-black";
+
+    /* identification */
+    part-number = "RoboticsCape";
+
+    /* version */
+    version = "00A0";
+	
+	exclusive-use =
+	
+		"P8.13",	/*PWM_2B*/
+		"P8.19",	/*PWM_2A*/
+		"P8.34",	/*MDIR_2B*/
+		"P8.43",	/*MDIR_3B*/
+		"P8.44",	/*MDIR_3A*/
+		"P8.45",	/*MDIR_4A*/
+		"P8.46",	/*MDIR_4B*/
+		"P9.12",	/*MDIR_1A*/
+		"P9.13",	/*MDIR_1B*/	
+		"P9.14",	/*PWM_1A*/
+		"P9.16",	/*PWM_1B*/
+
+
+
+		"ehrpwm1A",
+		"ehrpwm1B",
+		"ehrpwm2A",
+		"ehrpwm2B",
+
+
+
+fragment@0 {
+	target = <&am33xx_pinmux>;
+	__overlay__ {
+		/****************************************
+		* 			pinmux helper				
+		****************************************/
+		mux_helper_pins: pins {
+			pinctrl-single,pins = <
+			
+			/* HRPWM 1 */
+			0x048  0x6 /* P9_14 | MODE 6 */
+			0x04c  0x6 /* P9_16 | MODE 6 */
+			 
+			/* HRPWM 2 */
+			0x020  0x4 /* P8_19 | MODE 4 */
+			0x024  0x4 /* P8_13 | MODE 4 */
+
+				>;
+		};
+			
+	};
+};
+	
+
+/****************************************
+	Pinmux Helper
+	activates the pinmux helper list of pin modes
+****************************************/
+fragment@1 {
+	target = <&ocp>;
+		__overlay__ {
+			test_helper: helper {
+			compatible = "bone-pinmux-helper";
+			pinctrl-names = "default";
+			pinctrl-0 = <&mux_helper_pins>;
+			status = "okay";
+		};
+	};
+};
+
+	
+/****************************************
+ 		PWMSS			
+****************************************/	
+fragment@2 {
+	target = <&epwmss0>;
+	__overlay__ {
+		status = "okay";
+	};
+};
+
+fragment@3 {
+	target = <&epwmss1>;
+	__overlay__ {
+		status = "okay";
+	};
+};
+
+fragment@4 {
+	target = <&epwmss2>;
+	__overlay__ {
+		status = "okay";
+	};
+};
+
+
+fragment@5 {
+	target = <&ehrpwm0>;
+	__overlay__ {
+		status = "okay";
+	};
+};
+
+fragment@6 {
+	target = <&ehrpwm1>;
+	__overlay__ {
+		status = "okay";
+	};
+};
+
+fragment@7 {
+	target = <&ehrpwm2>;
+	__overlay__ {
+		status = "okay";
+	};
+};
