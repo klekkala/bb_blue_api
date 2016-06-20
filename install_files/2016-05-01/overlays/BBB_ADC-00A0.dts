@@ -16,6 +16,8 @@
 
 	// resources this cape uses
 	exclusive-use =
+		"P9.35",    /*V_DIV_BAT*/
+		"P9.36",	/*V_DIV_DC*/
 		"P9.37", 	/*AIN2*/
 		"P9.38", 	/*AIN3*/
 		"P9.39", 	/*AIN0*/
@@ -30,7 +32,7 @@
 
 			status = "okay";
 			adc {
-    		ti,adc-channels = <0 1 2 3>;
+    		ti,adc-channels = <0 1 2 3 4 5>;
 			};
 		};
 	};
