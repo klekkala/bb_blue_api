@@ -11,7 +11,7 @@
     version = "00A0";
 	
 	exclusive-use =
-	
+
 		"P8.13",	/*PWM_2B*/
 		"P8.19",	/*PWM_2A*/
 		"P8.34",	/*MDIR_2B*/
@@ -29,7 +29,7 @@
 		"ehrpwm1A",
 		"ehrpwm1B",
 		"ehrpwm2A",
-		"ehrpwm2B",
+		"ehrpwm2B";
 
 
 
