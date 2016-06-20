@@ -92,4 +92,11 @@
 #define PRU_SERVO_LOOP_INSTRUCTIONS	48	// instructions per PRU servo timer loop 
 
 
+// sysfs File declaration for the onboard evices
+#define SYSFS_GPIO_DIR "/sys/class/gpio"
+#define SYSFS_PWM_DIR "/sys/class/pwm"
+#define SYSFS_IMU_DIR "/sys/bus/iio/devices/iio:device0"
+#define SYSFS_BARO_DIR "/sys/bus/iio/devices/iio:device0"
+#define SYSFS_PWM_DIR "/sys/bus/iio/devices/iio:device0"
+
 #endif //ROBOTICS_CAPE_DEFS
