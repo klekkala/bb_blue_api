@@ -38,28 +38,31 @@ ___
 
 `int read_accel_data(int16_t offset);`  
 
-Send user provided sysevent to PRU INTC.  
+Always reads in latest accelerometer values. The sensor self-samples at 1khz and this retrieves the latest data.
 
-@sysevent : Sysevent number ( 0 – 63 )  
+@offset : gets the latest values ccording the offset given 
 
-Returns 0 on success.  
+Returns the value on success.  
 
 ___
 
 `int read_gyro_data(int16_t offset);` 
 
-@pru_num : PRU core id ( 0 or 1 )  
+Always reads in latest gyroscope values. The sensor self-samples at 1khz and this retrieves the latest data.
 
-Returns true if specified core is powered up. Otherwise false.  
+@offset : gets the latest values ccording the offset given 
+
+Returns the value on success
 
 ___
 
 `int read_mag_data(int16_t offset);` 
 
-Sets the Gyro Offset for the MPU-9250
+Always reads in latest magnetometer values. The sensor self-samples at 1khz and this retrieves the latest data.
 
-@offset : Offset value
+@offset : gets the latest values ccording the offset given 
 
+Returns the value on success
 ___
 
 `int read_imu_temp();`
@@ -70,48 +73,10 @@ Returns the read temperature on success
 
 ___
 
-`int set_imu_interrupt_func(int(*func)(void));`
-
-Shutdown PRU core.
-
-@pru_num: PRU0 / PRU1  
-
-Returns 0 on success
-
-___
-
-`int setXGyroOffset(int16_t offset);`  
-
-Send user provided sysevent to PRU INTC.  
-
-@sysevent : Sysevent number ( 0 – 63 )  
-
-Returns 0 on success.  
-
-___
-
-`int setYGyroOffset(int16_t offset);` 
-
-@pru_num : PRU core id ( 0 or 1 )  
-
-Returns true if specified core is powered up. Otherwise false.  
-
-___
-
-`int setZGyroOffset(int16_t offset);` 
-
-Sets the Gyro Offset for the MPU-9250
-
-@offset : Offset value
-
-___
 
 `int loadGyroCalibration();`
 
-Boots the PRU core.  
-
-@fwname : path to PRU firmware  
-@pru_num: PRU0 / PRU1  
+Loads up the Gyro Calibration matrix into the driver  
 
 Returns 0 on success
 
@@ -119,9 +84,9 @@ ___
 
 `int set_imu_interrupt_func(int(*func)(void));`
 
-Shutdown PRU core.
+sets a user function to be called when new data is read
 
-@pru_num: PRU0 / PRU1  
+@*func : user function which is triggered when new data is read 
 
 Returns 0 on success
 
@@ -164,16 +129,16 @@ ___
 
 `float get_adc_volt(int p)`
 
-Shutdown PRU core.
+gets the voltage from adc pin
 
-@pru_num: PRU0 / PRU1  
+@p : input the voltage channel
 
-Returns 0 on success
+returns an actual voltage for an adc channel
 
 
 `float get_battery_voltage()`  
 
-Get the 2-cell LiPo battery voltage value connected to the board.
+returns the LiPo battery voltage on the robotics cape which accounts for the voltage divider on the cape
 
 Returns the value of the voltage on success.  
 
@@ -181,7 +146,7 @@ ___
 
 `float get_dc_jack_voltage()` 
 
-Gets the dc voltage supplied to the jack 
+returns the DC power jack voltage on the robotics cape this accounts for the voltage divider ont he cape
 
 Returns the value of the dc voltage on success. 
 
