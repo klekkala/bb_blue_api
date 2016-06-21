@@ -3,8 +3,8 @@
 
  ***************************************************************************/
 
-#include "../robotics_cape.h"
-#include "../robotics_cape_defs.h"
+#include "bb_blue_api.h"
+#include "sensor_config.h"
 #include "bmp280_defs.h"
 
 #include <stdio.h>
@@ -327,5 +327,3 @@ int set_sea_level_pressure_pa(float pa){
 	cal.sea_level_pa = pa;
 	return 0;
 }
-
-

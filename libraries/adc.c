@@ -10,15 +10,15 @@
 
 #include "bb_blue_api.h"
 #include "sensor_config.h"
+#include "useful_includes.h"
 
 
 int adc_read_raw(int ch){
 
 	int fd;
 	char buf[MAX_BUF];
-	int ch;
 
-	snprintf(buf, sizeof(buf), SYSFS_ADC_DIR "/in_voltage_raw", ch);
+	snprintf(buf, sizeof(buf), SYSFS_ADC_DIR "/in_voltage%d_raw", ch);
 
 	fd = open(buf, O_RDONLY);
 	if (fd < 0) {
@@ -33,7 +33,7 @@ int adc_read_raw(int ch){
 }
 
 
-int get_adc_raw(int p){
+int get_adc_raw(int ch){
 
 	if(ch<0 || ch>6){
 		printf("analog pin must be in 0-6\n");
@@ -45,7 +45,7 @@ int get_adc_raw(int p){
 
 
 
-float get_adc_volt(int p){
+float get_adc_volt(int ch){
 
 	if(ch<0 || ch>6){
 		printf("analog pin must be in 0-6\n");
@@ -79,4 +79,13 @@ float get_dc_jack_voltage(){
 	float v = (get_adc_volt(DC_JACK_ADC_CH)*V_DIV_RATIO)-DC_JACK_OFFSET; 
 	if(v<0.3) v = 0.0;
 	return v;
+}
+
+int main(){
+
+	float val;
+	val = get_dc_jack_voltage();
+	printf("%f\n", val);
+	return 0;
+
 }

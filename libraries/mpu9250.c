@@ -6,12 +6,8 @@
 * Credit to Kris Winer most of the framework and register definitions.
 *******************************************************************************/
 
-#include "../robotics_cape.h"
-#include "../useful_includes.h"
-#include "../simple_gpio/simple_gpio.h"
-#include "mpu9250_defs.h"
-#include "dmp_firmware.h"
-#include "dmpKey.h"
+#include "bb_blue_api.h"
+#include "useful_includes.h"
 
 // #define DEBUG
 #define WARNINGS
@@ -203,15 +199,22 @@ int initialize_imu(imu_data_t *data, imu_config_t conf){
 *******************************************************************************/
 int read_accel_data(imu_data_t *data){
 	// new register data stored here
-	uint8_t raw[6];  
-	
-	// set the device address
-	i2c_set_device_address(IMU_BUS, IMU_ADDR);
-	
-	 // Read the six raw data registers into data array
-	if(i2c_read_bytes(IMU_BUS, ACCEL_XOUT_H, 6, &raw[0])<0){
-		return -1;
+
+	int fd;
+	char buf[MAX_BUF];
+	int ch;
+
+	snprintf(buf, sizeof(buf), SYSFS_MPU_DIR "/in_accel_x_raw%d", ch);
+
+	fd = open(buf, O_RDONLY);
+	if (fd < 0) {
+		perror("in_voltage_raw");
+		return fd;
 	}
+
+	read(fd, &ch, 4);
+	close(fd);
+	return ch;
 	
 	// Turn the MSB and LSB into a signed 16-bit value
 	data->raw_accel[0] = (int16_t)(((uint16_t)raw[0]<<8)|raw[1]);

@@ -980,5 +980,5 @@ discrete_filter generatePID(float kp, float ki, float kd, float Tf, float dt);
 // print order, numerator, and denominator constants
 int print_filter_details(discrete_filter* filter);
 
-	
+
 #endif //ROBOTICS_CAPE

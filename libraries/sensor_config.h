@@ -97,6 +97,31 @@
 #define SYSFS_PWM_DIR "/sys/class/pwm"
 #define SYSFS_IMU_DIR "/sys/bus/iio/devices/iio:device0"
 #define SYSFS_BARO_DIR "/sys/bus/iio/devices/iio:device0"
-#define SYSFS_PWM_DIR "/sys/bus/iio/devices/iio:device0"
+#define SYSFS_ADC_DIR "/sys/bus/iio/devices/iio:device0"
 
+
+
+#define SYSFS_GPIO_DIR "/sys/class/gpio"
+#define MAX_BUF 64
+#define SYSFS_OMAP_MUX_DIR "/sys/kernel/debug/omap_mux/"
+
+typedef enum {
+	INPUT_PIN,
+	OUTPUT_PIN
+}PIN_DIRECTION;
+
+typedef enum {
+	LOW,
+	HIGH
+} PIN_VALUE;
+
+int gpio_export(unsigned int gpio);
+int gpio_unexport(unsigned int gpio);
+int gpio_set_dir(int gpio, PIN_DIRECTION out_flag);
+int gpio_set_value(unsigned int gpio, PIN_VALUE value);
+int gpio_get_value(unsigned int gpio, int *value);
+int gpio_set_edge(unsigned int gpio, char *edge);
+int gpio_fd_open(unsigned int gpio);
+int gpio_fd_close(int fd);
+int gpio_omap_mux_setup(const char *omap_pin0_name, const char *mode);
 #endif //ROBOTICS_CAPE_DEFS
