@@ -222,4 +222,3 @@ int simple_set_pwm_duty_ns(int subsystem, char ch, int duty_ns){
 	return 0;
 	
 }
-
