@@ -6,7 +6,7 @@ extra floating point operations done on the main processor.
 */
 
 
-#include "MPU9250.h"
+#include "../bb_blue_api.h"
 
 // Implementation of Sebastian Madgwick's "...efficient orientation filter for... inertial/magnetic sensor arrays"
 // (see http://www.x-io.co.uk/category/open-source/ for examples and more details)

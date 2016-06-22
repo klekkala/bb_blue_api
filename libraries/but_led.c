@@ -18,15 +18,6 @@ Description: Unit testing API for buttons and leds
 #include "bb_blue_api.h"
 #include "sensor_config.h"
 #include "useful_includes.h"
-#include "simple_gpio/simple_gpio.h"
-
-/*******************************************************************************
-* Global Variables
-*******************************************************************************/
-enum state_t state = UNINITIALIZED;
-int pause_btn_state, mode_btn_state;
-static unsigned int *prusharedMem_32int_ptr;
-int pru_initialized; // set to 1 by initialize_cape, checked by cleanup_cape
 
 
 /*******************************************************************************
@@ -57,13 +48,6 @@ pthread_t pause_released_thread;
 pthread_t mode_pressed_thread;
 pthread_t mode_released_thread;
 
-
-
-/*******************************************************************************
-* int initialize_cape()
-* sets up necessary hardware and software
-* should be the first thing your program calls
-*******************************************************************************/
 
 
 int initialize_led_handlers(){

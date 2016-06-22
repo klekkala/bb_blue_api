@@ -5,8 +5,8 @@
 * robotics cape library. These do not necessarily interact with hardware.
 *******************************************************************************/
 
-#include "../robotics_cape.h"
-#include "../useful_includes.h"
+#include "bb_blue_api.h"
+#include "useful_includes.h"
 
 /*******************************************************************************
 * @ int null_func()

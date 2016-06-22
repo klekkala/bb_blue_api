@@ -222,3 +222,197 @@ int simple_set_pwm_duty_ns(int subsystem, char ch, int duty_ns){
 	return 0;
 	
 }
+
+
+
+/*******************************************************************************
+* enable_motors()
+* 
+* turns on the standby pin to enable the h-bridge ICs
+* returns 0 on success
+*******************************************************************************/
+int enable_motors(){
+	set_motor_free_spin_all();
+	return mmap_gpio_write(MOT_STBY, HIGH);
+}
+
+/*******************************************************************************
+* int disable_motors()
+* 
+* turns off the standby pin to disable the h-bridge ICs
+* and disables PWM output signals, returns 0 on success
+*******************************************************************************/
+int disable_motors(){
+	set_motor_free_spin_all();
+	return mmap_gpio_write(MOT_STBY, LOW);
+}
+
+/*******************************************************************************
+* int set_motor(int motor, float duty)
+* 
+* set a motor direction and power
+* motor is from 1 to 4, duty is from -1.0 to +1.0
+*******************************************************************************/
+int set_motor(int motor, float duty){
+	uint8_t a,b;
+	
+	if(state == UNINITIALIZED){
+		initialize_cape();
+	}
+
+	//check that the duty cycle is within +-1
+	if (duty>1.0){
+		duty = 1.0;
+	}
+	else if(duty<-1.0){
+		duty=-1.0;
+	}
+	//switch the direction pins to H-bridge
+	if (duty>=0){
+	 	a=HIGH;
+		b=LOW;
+	}
+	else{
+		a=LOW;
+		b=HIGH;
+		duty=-duty;
+	}
+	
+	// set gpio direction outputs & duty
+	switch(motor){
+		case 1:
+			mmap_gpio_write(MDIR1A, a);
+			mmap_gpio_write(MDIR1B, b);
+			set_pwm_duty(1, 'A', duty);
+			break;
+		case 2:
+			mmap_gpio_write(MDIR2A, b);
+			mmap_gpio_write(MDIR2B, a);
+			set_pwm_duty(1, 'B', duty);
+			break;
+		case 3:
+			mmap_gpio_write(MDIR3A, b);
+			mmap_gpio_write(MDIR3B, a);
+			set_pwm_duty(2, 'A', duty);
+			break;
+		case 4:
+			mmap_gpio_write(MDIR4A, a);
+			mmap_gpio_write(MDIR4B, b);
+			set_pwm_duty(2, 'B', duty);
+			break;
+		default:
+			printf("enter a motor value between 1 and 4\n");
+			return -1;
+	}
+	return 0;
+}
+
+/*******************************************************************************
+* int set_motor_all(float duty)
+* 
+* applies the same duty cycle argument to all 4 motors
+*******************************************************************************/
+int set_motor_all(float duty){
+	int i;
+	for(i=1;i<=MOTOR_CHANNELS; i++){
+		set_motor(i, duty);
+	}
+	return 0;
+}
+
+/*******************************************************************************
+* int set_motor_free_spin(int motor)
+* 
+* This puts one or all motor outputs in high-impedance state which lets the 
+* motor spin freely as if it wasn't connected to anything.
+*******************************************************************************/
+int set_motor_free_spin(int motor){
+	
+	// set gpio direction outputs & duty
+	switch(motor){
+		case 1:
+			mmap_gpio_write(MDIR1A, 0);
+			mmap_gpio_write(MDIR1B, 0);
+			set_pwm_duty(1, 'A', 0.0);
+			break;
+		case 2:
+			mmap_gpio_write(MDIR2A, 0);
+			mmap_gpio_write(MDIR2B, 0);
+			set_pwm_duty(1, 'B', 0.0);
+			break;
+		case 3:
+			mmap_gpio_write(MDIR3A, 0);
+			mmap_gpio_write(MDIR3B, 0);
+			set_pwm_duty(2, 'A', 0.0);
+			break;
+		case 4:
+			mmap_gpio_write(MDIR4A, 0);
+			mmap_gpio_write(MDIR4B, 0);
+			set_pwm_duty(2, 'B', 0.0);
+			break;
+		default:
+			printf("enter a motor value between 1 and 4\n");
+			return -1;
+	}
+	return 0;
+}
+
+/*******************************************************************************
+* @ int set_motor_free_spin_all()
+*******************************************************************************/
+int set_motor_free_spin_all(){
+	int i;
+	for(i=1;i<=MOTOR_CHANNELS; i++){
+		set_motor_free_spin(i);
+	}
+	return 0;
+}
+
+/*******************************************************************************
+* int set_motor_brake(int motor)
+* 
+* These will connect one or all motor terminal pairs together which
+* makes the motor fight against its own back EMF turning it into a brake.
+*******************************************************************************/
+int set_motor_brake(int motor){
+
+	// set gpio direction outputs & duty
+	switch(motor){
+		case 1:
+			mmap_gpio_write(MDIR1A, 1);
+			mmap_gpio_write(MDIR1B, 1);
+			set_pwm_duty(1, 'A', 0.0);
+			break;
+		case 2:
+			mmap_gpio_write(MDIR2A, 1);
+			mmap_gpio_write(MDIR2B, 1);
+			set_pwm_duty(1, 'B', 0.0);
+			break;
+		case 3:
+			mmap_gpio_write(MDIR3A, 1);
+			mmap_gpio_write(MDIR3B, 1);
+			set_pwm_duty(2, 'A', 0.0);
+			break;
+		case 4:
+			mmap_gpio_write(MDIR4A, 1);
+			mmap_gpio_write(MDIR4B, 1);
+			set_pwm_duty(2, 'B', 0.0);
+			break;
+		default:
+			printf("enter a motor value between 1 and 4\n");
+			return -1;
+	}
+	return 0;
+}
+
+/*******************************************************************************
+* @ int set_motor_brake_all()
+*******************************************************************************/
+int set_motor_brake_all(){
+	int i;
+	for(i=1;i<=MOTOR_CHANNELS; i++){
+		set_motor_brake(i);
+	}
+	return 0;
+}
+

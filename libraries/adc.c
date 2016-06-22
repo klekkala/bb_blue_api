@@ -1,4 +1,6 @@
-
+/**Author: Kiran Kumar Lekkala
+Created: 20 June 2016
+Description: Userspace API for TSC-ADC module in beaglebone black**/
 
 #include <stdio.h>
 #include <stdlib.h>

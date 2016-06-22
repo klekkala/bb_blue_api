@@ -6,7 +6,7 @@
 * SISO filters for arbitrary transfer functions. 
 *******************************************************************************/
 
-#include "../robotics_cape.h"
+#include "../bb_blue_api.h"
 #include <stdio.h>
 
 #define DEBUG
