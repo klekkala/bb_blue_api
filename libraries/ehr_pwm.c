@@ -27,7 +27,7 @@ of the authors and should not be interpreted as representing official policies,
 either expressed or implied, of the FreeBSD Project.
 */
 
-#include "simple_pwm.h"
+#include "bb_blue_api.h"
 #include <stdio.h>
 #include <dirent.h>
 #include <fcntl.h>
