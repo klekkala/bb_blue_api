@@ -256,7 +256,7 @@ int disable_motors(){
 * set a motor direction and power
 * motor is from 1 to 4, duty is from -1.0 to +1.0
 *******************************************************************************/
-int set_motor(state_t, state, int motor, float duty){
+int set_motor(int motor, float duty){
 	uint8_t a,b;
 	
 	if(state == UNINITIALIZED){

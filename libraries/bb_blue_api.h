@@ -13,6 +13,7 @@
 #define ROBOTICS_CAPE
 
 #include <stdint.h> // for uint8_t types etc
+#include <stdio.h>
 typedef struct timespec	timespec;
 typedef struct timeval timeval;
 
@@ -64,10 +65,9 @@ typedef enum state_t {
 	EXITING
 } state_t;
 
-state_t get_state();
-int set_state(state_t new_state);
-int print_state();
-//enum state_t state = UNINITIALIZED;
+extern enum state_t state;
+
+
 
 /*******************************************************************************
 * LEDs

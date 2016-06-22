@@ -23,14 +23,11 @@ Description: Unit testing API for buttons and leds
 /*******************************************************************************
 * local function declarations
 *******************************************************************************/
-int is_cape_loaded();
 int initialize_button_handlers();
 int (*pause_released_func)();
 int (*pause_pressed_func)();
 int (*mode_released_func)();
 int (*mode_pressed_func)();
-int initialize_pru();
-void shutdown_signal_handler(int signo);
 
 /*******************************************************************************
 * local thread function declarations
@@ -62,27 +59,6 @@ int initialize_led_handlers(){
 	gpio_export(GRN_LED);
 	gpio_set_dir(GRN_LED, OUTPUT_PIN);
 }
-
-/*******************************************************************************
-* enum state_t get_state()
-* returns the high-level robot state variable
-* use this for managing how your threads start and stop
-*******************************************************************************/
-enum state_t get_state(){
-	return state;
-}
-
-
-/*******************************************************************************
-* int set_state(enum state_t new_state)
-* sets the high-level robot state variable
-* use this for managing how your threads start and stop
-*******************************************************************************/
-int set_state(enum state_t new_state){
-	state = new_state;
-	return 0;
-}
-
 
 
 
