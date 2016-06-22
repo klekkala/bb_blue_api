@@ -6,7 +6,7 @@
 * component so these functions could be used independently.
 *******************************************************************************/
 
-#include "../robotics_cape.h"
+#include "bb_blue_api.h"
 #include <stdio.h>
 #include <fcntl.h>
 #include <string.h>

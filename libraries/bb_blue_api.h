@@ -67,7 +67,7 @@ typedef enum state_t {
 state_t get_state();
 int set_state(state_t new_state);
 int print_state();
-
+//enum state_t state = UNINITIALIZED;
 
 /*******************************************************************************
 * LEDs
@@ -396,7 +396,7 @@ int send_servo_pulse_us_all(int us);
 * Puts a satellite receiver in bind mode. Use the bind_dsm2 example program
 * instead of calling this in your own program.
 *
-* int calibrate_dsm2()
+* int calibrate_dsm2_routine()
 *
 * Starts a calibration routine. 
 *
@@ -413,7 +413,7 @@ int   get_dsm2_frame_resolution();
 int   get_num_dsm2_channels();
 int   stop_dsm2_service();
 int   bind_dsm2();
-int   calibrate_dsm2();
+int   calibrate_dsm2_routine();
 
 
 /******************************************************************************
@@ -542,7 +542,7 @@ typedef struct imu_config_t {
 	// DMP settings, only used with DMP interrupt
 	int dmp_sample_rate;
 	imu_orientation_t orientation; //orientation matrix
-	// higher mix_factor means less weight the compass has on fused_euler
+	// higher mix_factor means less weight the compass has on fused_TaitBryan
 	int compass_mix_factor; // must be >0
 	int dmp_interrupt_priority; // scheduler priority for handler
 	int show_warnings;	// set to 1 to enable showing of i2c_bus warnings
@@ -565,14 +565,14 @@ typedef struct imu_data_t {
 	float gyro_to_degs; // to degrees/s
 	
 	// everything below this line is available in DMP mode only
-	// quaternion and Euler angles from DMP based on ONLY Accel/Gyro
+	// quaternion and TaitBryan angles from DMP based on ONLY Accel/Gyro
 	float dmp_quat[4]; 	// normalized quaternion
-	float dmp_euler[3];	// radians roll/pitch/yaw
+	float dmp_TaitBryan[3];	// radians pitch/roll/yaw X/Y/Z
 	
 	// If magnetometer is enabled in DMP mode, the following quaternion and 
-	// Euler angles will be available which add magnetometer data to filter
+	// TaitBryan angles will be available which add magnetometer data to filter
 	float fused_quat[4]; 	// normalized quaternion
-	float fused_euler[3]; 	// radians roll/pitch/yaw
+	float fused_TaitBryan[3]; 	// radians pitch/roll/yaw X/Y/Z
 	float compass_heading;	// heading in radians based purely on magnetometer
 } imu_data_t;
  
@@ -580,6 +580,7 @@ typedef struct imu_data_t {
 imu_config_t get_default_imu_config();
 int set_imu_config_to_defaults(imu_config_t *conf);
 int calibrate_gyro_routine();
+int calibrate_mag_routine();
 int power_off_imu();
 
 // one-shot sampling mode functions
@@ -758,6 +759,12 @@ int kill_robot();
 * A simple function that returns 0. This exists so function pointers can be 
 * set to do nothing such as button and imu interrupt handlers.
 *
+* @ float get_random_float()
+*
+* Returns a random floating point value between -1 and 1. This is here because
+* the rand() function from stdlib.h only returns and integer. This is an
+* optimized routine using bitwise operation instead of floating point division.
+*
 * @ saturate_float(float* val, float min, float max)
 *
 * Modifies val to be bounded between between min and max. Returns 1 if 
@@ -775,6 +782,11 @@ int kill_robot();
 * Convenient for use with nanosleep() function and accurately timed loops.
 * Unlike timespec_sub defined in time.h, timespec_diff does not care which came 
 * first, A or B. A positive difference in time is always returned.
+*
+* @ void timespec_add(timespec* start, float seconds);
+*
+* Adds a floating point number of seconds to a timespec struct. This saves
+* yet more tedious manipulation of timespec structs.
 *
 * @ uint64_t timespec_to_micros(timespec ts)
 * 
@@ -806,16 +818,26 @@ int kill_robot();
 * liking if you need to pass arguments. For example, if you have a function
 * int foo(), call it with supressed output to stderr as follows:
 * int ret = suppress_stderr(&foo);
+*
+* @ continue_or_quit()
+*
+* This is a blocking function which returns 0 if the user presses ENTER.
+* otherwise it returns -1 on any other keypress. If ctrl-C is pressed it will
+* additionally set the global state to EXITITING. This is useful for checking
+* if the user wishes to continue with a process or quit.
 *******************************************************************************/
 int null_func();
+float get_random_float();
 int saturate_float(float* val, float min, float max);
 char *byte_to_binary(unsigned char x);
 timespec timespec_diff(timespec A, timespec B);
+void timespec_add(timespec* start, float seconds);
 uint64_t timespec_to_micros(timespec ts);
 uint64_t timeval_to_micros(timeval tv);
 uint64_t micros_since_epoch();
 int suppress_stdout(int (*func)(void));
 int suppress_stderr(int (*func)(void));
+int continue_or_quit();
 
 
 /*******************************************************************************
@@ -823,24 +845,24 @@ int suppress_stderr(int (*func)(void));
 *
 * These are useful for dealing with IMU orientation data and general vector math
 *******************************************************************************/
-// defines for index location within vector and quaternion arrays
-#define VEC3_X		0
-#define VEC3_Y		1
-#define VEC3_Z		2
+// defines for index location within TaitBryan and quaternion arrays
+#define TB_PITCH_X	0
+#define TB_ROLL_Y	1
+#define TB_YAW_Z	2
 #define QUAT_W		0
 #define QUAT_X		1
 #define QUAT_Y		2
 #define QUAT_Z		3
 
-float vector3DotProduct(float a[3], float b[3]);
-void vector3CrossProduct(float a[3], float b[3], float d[3]);
 float quaternionNorm(float q[4]);
 void normalizeQuaternion(float q[4]);
-void quaternionToEuler(float q[4], float v[3]);
-void eulerToQuaternion(float v[3], float q[4]);
+void quaternionToTaitBryan(float q[4], float v[3]);
+void TaitBryanToQuaternion(float v[3], float q[4]);
 void tilt_compensate(float in[4], float tilt[4], float out[4]);
 void quaternionConjugate(float in[4], float out[4]);
 void quaternionMultiply(float a[4], float b[4], float out[4]);
+float vector3DotProduct(float a[3], float b[3]);
+void vector3CrossProduct(float a[3], float b[3], float d[3]);
 
 /*******************************************************************************
 * Ring Buffer
@@ -866,120 +888,254 @@ void quaternionMultiply(float a[4], float b[4], float out[4]);
 * the buffer. If 'position' is given as 0 then the most recent value is
 * returned. 'Position' obviously can't be larger than buffer_size minus 1
 *******************************************************************************/
-#define RING_BUF_SIZE 32
 
-typedef struct ring_buf{
-	float data[RING_BUF_SIZE];
+typedef struct ring_buf_t{
+	//float data[RING_BUF_SIZE];
+	float* data;
+	int size;
 	int index;
-} ring_buf;
+	int initialized;
+} ring_buf_t;
 
-int reset_ring_buf(ring_buf* buf);
-int insert_new_ring_buf_value(ring_buf* buf, float val);
-float get_ring_buf_value(ring_buf* buf, int position);
+ring_buf_t create_ring_buf(int size);
+int reset_ring_buf(ring_buf_t* buf);
+int destroy_ring_buf(ring_buf_t* buf);
+int insert_new_ring_buf_value(ring_buf_t* buf, float val);
+float get_ring_buf_value(ring_buf_t* buf, int position);
 
 
 /*******************************************************************************
-* Discrete SISO Filter
+* Discrete SISO Filters
 *
 * This is a collection of functions for generating and implementing discrete 
 * SISO filters for arbitrary transfer functions. 
 *
-* @ struct dicrete_filter
+* @ struct d_filter_t
 *
 * This is the heart of the library. For each implemented filter the user must
 * create a single instance of a discrete_filter struct. Each instance contains
-* transfer function constants and
-* memory about IO 
-* data a discrete_filter instance has a fixed size but contains pointers to 
-* dynamic arrays thus it is best to generate an instance using one of the generate functions here
+* transfer function constants and memory about previous inputs and outputs.
+* You may read values directly from your own instance of the d_filter_t struct.
+* To modify the contents of the filter please use the functions provided here.
+*
+* @ d_filter_t generateFilter(int order,float dt,float num[],float den[])
+*
+* Allocate memory for a filter of specified order & fill with transfer
+* function constants. Use enable_saturation immediately after this if you want
+* to enable automatic saturation.
+*
+* @ float march_filter(d_filter_t* filter, float new_input)
+*
+* March the filter forward in time one step with new input data.
+* Returns new output which could also be accessed with filter.current_output
+* If saturation is enabled then the output will automatically be bound by the
+* min and max values given to enable_saturation. The enable_saturation entry
+* in the filter struct will also be set to 1 if saturation occurred. 
+*
+* @ int reset_filter(d_filter_t* filter)
+*
+* resets all inputs and outputs to 0
+*
+* @ int enable_saturation(d_filter_t* filter, float sat_min, float sat_max)
+*
+* If saturation is enabled for a specified filter, the filter will automatically
+* bound the output between min and max. You may ignore this function if you wish
+* the filter to run unbounded.
+*
+* @ int did_filter_t_saturate(d_filter_t* filter)
+*
+* Returns 1 if the filter saturated the last time step. Returns 0 otherwise.
+*
+* @ float previous_filter_input(d_filter_t* filter, int steps)
+*
+* Returns the input 'steps' back in time. Steps = 0 returns most recent input.
+*
+* @ float previous_filter_output(d_filter_t* filter, int steps)
+*
+* Returns the output 'steps' back in time. Steps = 0 returns most recent output.
+*
+* @ float newest_filter_output(d_filter_t* filter)
+*
+* Returns the most recent output from the filter. Alternatively the user could
+* access the value from their d_filter_t_t struct with filter.newest_output
+*
+* @ float newest_filter_input(d_filter_t* filter)
+*
+* Returns the most recent input to the filter. Alternatively the user could
+* access the value from their d_filter_t_t struct with filter.newest_input
+*
+* @ d_filter_t generateFirstOrderLowPass(float dt, float time_constant)
+*
+* Returns a configured and ready to use d_filter_t_t struct with a first order
+* low pass transfer function. dt is in units of seconds and time_constant is 
+* the number of seconds it takes to rise to 63.4% of a steady-state input.
+*
+* @ d_filter_t generateFirstOrderHighPass(float dt, float time_constant)
+*
+* Returns a configured and ready to use d_filter_t_t struct with a first order
+* high pass transfer function. dt is in units of seconds and time_constant is 
+* the number of seconds it takes to decay by 63.4% of a steady-state input.
+*
+* @ d_filter_t generateIntegrator(float dt)
+*
+* Returns a configured and ready to use d_filter_t_t struct with the transfer
+* function for a first order time integral.
+*
+* @ d_filter_t generatePID(float kp, float ki, float kd, float Tf, float dt)
+*
+* discrete-time implementation of a parallel PID controller with rolloff.
+* This is equivalent to the Matlab function: C = pid(Kp,Ki,Kd,Tf,Ts)
+*
+* We cannot implement a pure differentiator with a discrete transfer function
+* so this filter has high frequency rolloff with time constant Tf. Smaller Tf
+* results in less rolloff, but Tf must be greater than dt/2 for stability.
+*
+* @ int print_filter_details(d_filter_t* filter)
+*
+* Prints the order, numerator, and denominator coefficients for debugging.
 *******************************************************************************/
+#define MAX_SISO_ORDER 16
 
-typedef struct discrete_filter{
+typedef struct d_filter_t{
 	int order;
 	float dt;
 	// input scaling factor usually =1, useful for fast controller tuning
 	float prescaler; 
-	float numerator[RING_BUF_SIZE];	// points to array of numerator constants
-	float denominator[RING_BUF_SIZE];	// points to array 
+	float numerator[MAX_SISO_ORDER];	// points to array of numerator constants
+	float denominator[MAX_SISO_ORDER];	// points to array 
 	int saturation_en;
 	float saturation_min;
 	float saturation_max;
 	int saturation_flag;
-	ring_buf in_buf;
-	ring_buf out_buf;
+	ring_buf_t in_buf;
+	ring_buf_t out_buf;
 	
-	float last_input;
-	float last_output;
-} discrete_filter;
+	float newest_input;
+	float newest_output;
+} d_filter_t;
+
+d_filter_t generate_filter(int order,float dt,float num[],float den[]);
+float march_filter(d_filter_t* filter, float new_input);
+int reset_filter(d_filter_t* filter);
+int enable_saturation(d_filter_t* filter, float min, float max);
+int did_filter_t_saturate(d_filter_t* filter);
+float previous_filter_input(d_filter_t* filter, int steps);
+float previous_filter_output(d_filter_t* filter, int steps);
+float newest_filter_output(d_filter_t* filter);
+float newest_filter_input(d_filter_t* filter);
+d_filter_t generateFirstOrderLowPass(float dt, float time_constant);
+d_filter_t generateFirstOrderHighPass(float dt, float time_constant);
+d_filter_t generateIntegrator(float dt);
+d_filter_t generatePID(float kp, float ki, float kd, float Tf, float dt);
+int print_filter_details(d_filter_t* filter);
 
 
-/* 
---- March Filter ---
-march the filter forward in time one step with new input data
-returns new output which could also be accessed with filter.current_output
-*/
-float march_filter(discrete_filter* filter, float new_input);
+/*******************************************************************************
+* Linear Algebra
+*
+*
+*******************************************************************************/
+
+typedef struct matrix_t{
+	int rows;
+	int cols;
+	float** data;
+	int initialized;
+} matrix_t;
+
+typedef struct vector_t{
+	int len;
+	float* data;
+	int initialized;
+} vector_t;
 
 
-/* 
---- Saturate Filter ---
-limit the output of filter to be between min&max
-returns 1 if saturation was hit 
-returns 0 if output was within bounds
-*/
-int saturate_filter(discrete_filter* filter, float min, float max);
+// Basic Matrix creation, modification, and access
+matrix_t createMatrix(int rows, int cols);
+matrix_t duplicateMatrix(matrix_t A);
+matrix_t createSquareMatrix(int n);
+matrix_t createRandomMatrix(int rows, int cols);
+matrix_t createIdentityMatrix(int dim);
+matrix_t createDiagonalMatrix(vector_t v);
+matrix_t createMatrixOfOnes(int dim);
+int setMatrixEntry(matrix_t* A, int row, int col, float val);
+float getMatrixEntry(matrix_t A, int row, int col);
+void printMatrix(matrix_t A);
+void printMatrixSciNotation(matrix_t A);
+void destroyMatrix(matrix_t* A);
 
-/*
---- Zero Filter ---
-reset all input and output history to 0
-*/
-int reset_filter(discrete_filter* filter);
+// Basic Vector creation, modification, and access
+vector_t createVector(int n);
+vector_t duplicateVector(vector_t v);
+vector_t createRandomVector(int len);
+vector_t createVectorOfOnes(int len);
+int setVectorEntry(vector_t* v, int pos, float val);
+float getVectorEntry(vector_t v, int pos);
+void printVector(vector_t v);
+void printVectorSciNotation(vector_t v);
+void destroyVector(vector_t* v);
 
-/*
-get_previous_input
-returns an input with offset 'steps'
-steps = 0 returns last input
-*/
-int get_previous_input(discrete_filter* filter, int steps);
+// Matrix Multiplication, Addition, and other transforms
+matrix_t matrixMultiply(matrix_t A, matrix_t B);
+int matrixTimesScalar(matrix_t* A, float s);
+int vectorTimesScalar(vector_t* v, float s);
+vector_t matrixTimesColVec(matrix_t A, vector_t v);
+vector_t rowVecTimesMatrix(vector_t v, matrix_t A);
+matrix_t matrixAdd(matrix_t A, matrix_t B);
+int transposeMatrix(matrix_t* A);
 
-/*
-get_previous_output
-returns a previous output with offset 'steps'
-steps = 0 returns last output
-*/
-int get_previous_output(discrete_filter* filter, int steps);
+// vector operations
+float vectorNorm(vector_t v);
+vector_t vectorProjection(vector_t v, vector_t e);
+matrix_t outerProduct(vector_t v1, vector_t v2);
+float dotProduct(vector_t v1, vector_t v2);
+vector_t crossProduct3D(vector_t v1, vector_t v2);
 
-/*
---- Generate Filter ---
-Dynamically allocate memory for a filter of specified order
-and set transfer function constants.
-Note: A normalized transfer function should have a leading 1 
-in the denominator but can be !=1 in this library
-*/
-discrete_filter generate_filter(int order, float dt,float numerator[],float denominator[]);
+// Advanced matrix operations
+float matrixDeterminant(matrix_t A);
+int matrixInv(matrix_t* A);
+matrix_t Householder(vector_t v);
+int QRdecomposition(matrix_t A, matrix_t*Q, matrix_t* R);
 
-						
-
-// time_constant is seconds to rise 63.4% 
-discrete_filter generateFirstOrderLowPass(float dt, float time_constant);
-
-// time_constant is seconds to decay 63.4% 
-discrete_filter generateFirstOrderHighPass(float dt, float time_constant);
-
-// integrator scaled to loop dt
-discrete_filter generateIntegrator(float dt);
+// linear system solvers
+vector_t linSolve(matrix_t A, vector_t b);
+vector_t linSolveQR(matrix_t A, vector_t b);
+int fitEllipsoid(matrix_t points, vector_t* center, vector_t* lengths);
 
 
-// discrete-time implementation of a parallel PID controller with derivative filter
-// similar to Matlab pid command
-//
-// N is the pole location for derivative filter. Must be greater than 2*DT
-// smaller N gives faster filter decay
-discrete_filter generatePID(float kp, float ki, float kd, float Tf, float dt);
 
-// print order, numerator, and denominator constants
-int print_filter_details(discrete_filter* filter);
+/*******************************************************************************
+* CPU Frequency Control
+*
+* @ int set_cpu_frequency(cpu_frequency_t freq)
+*
+* Sets the CPU frequency to either a fixed value or to onedemand automatic
+* scaling mode. Returns 0 on success, -1 on failure.
+*
+* @ cpu_frequency_t get_cpu_frequency()
+*
+* Returns the current clock speed of the Beaglebone's Sitara processor in the
+* form of the provided enumerated type. It will never return the FREQ_ONDEMAND
+* value as the intention of this function is to see the clock speed as set by
+* either the user or the ondemand governor itself.
+*
+* @ int print_cpu_frequency()
+*
+* Prints the current frequency to the screen. For example "300MHZ".
+* Returns 0 on success or -1 on failure.
+*******************************************************************************/
 
+typedef enum cpu_frequency_t{
+	FREQ_ONDEMAND,
+	FREQ_300MHZ,
+	FREQ_600MHZ,
+	FREQ_800MHZ,
+	FREQ_1000MHZ
+} cpu_frequency_t;
+
+int set_cpu_frequency(cpu_frequency_t freq);
+cpu_frequency_t get_cpu_frequency();
+int print_cpu_frequency();
 
 
 //PWM functions

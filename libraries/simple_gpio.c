@@ -43,7 +43,9 @@
 #include <fcntl.h>
 #include <poll.h>
 
-#include "simple_gpio.h"
+#include "bb_blue_api.h"
+#include "sensor_config.h"
+#include "useful_includes.h"
 
 /****************************************************************
  * gpio_export

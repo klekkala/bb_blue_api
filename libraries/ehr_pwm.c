@@ -28,6 +28,7 @@ either expressed or implied, of the FreeBSD Project.
 */
 
 #include "bb_blue_api.h"
+#include "sensor_config.h"
 #include <stdio.h>
 #include <dirent.h>
 #include <fcntl.h>
@@ -41,6 +42,8 @@ either expressed or implied, of the FreeBSD Project.
 int duty_fd[6]; 	// pointers to duty cycle file descriptor
 int period_ns[3]; 	//one period (frequency) per subsystem
 char simple_pwm_initialized[3] = {0,0,0};
+
+
 
 int simple_init_pwm(int subsystem, int frequency){
 	int export_fd, len;
@@ -233,7 +236,7 @@ int simple_set_pwm_duty_ns(int subsystem, char ch, int duty_ns){
 *******************************************************************************/
 int enable_motors(){
 	set_motor_free_spin_all();
-	return mmap_gpio_write(MOT_STBY, HIGH);
+	return gpio_set_value(MOT_STBY, HIGH);
 }
 
 /*******************************************************************************
@@ -244,7 +247,7 @@ int enable_motors(){
 *******************************************************************************/
 int disable_motors(){
 	set_motor_free_spin_all();
-	return mmap_gpio_write(MOT_STBY, LOW);
+	return gpio_set_value(MOT_STBY, LOW);
 }
 
 /*******************************************************************************
@@ -253,7 +256,7 @@ int disable_motors(){
 * set a motor direction and power
 * motor is from 1 to 4, duty is from -1.0 to +1.0
 *******************************************************************************/
-int set_motor(int motor, float duty){
+int set_motor(state_t, state, int motor, float duty){
 	uint8_t a,b;
 	
 	if(state == UNINITIALIZED){
@@ -281,23 +284,23 @@ int set_motor(int motor, float duty){
 	// set gpio direction outputs & duty
 	switch(motor){
 		case 1:
-			mmap_gpio_write(MDIR1A, a);
-			mmap_gpio_write(MDIR1B, b);
+			gpio_set_value(MDIR1A, a);
+			gpio_set_value(MDIR1B, b);
 			set_pwm_duty(1, 'A', duty);
 			break;
 		case 2:
-			mmap_gpio_write(MDIR2A, b);
-			mmap_gpio_write(MDIR2B, a);
+			gpio_set_value(MDIR2A, b);
+			gpio_set_value(MDIR2B, a);
 			set_pwm_duty(1, 'B', duty);
 			break;
 		case 3:
-			mmap_gpio_write(MDIR3A, b);
-			mmap_gpio_write(MDIR3B, a);
+			gpio_set_value(MDIR3A, b);
+			gpio_set_value(MDIR3B, a);
 			set_pwm_duty(2, 'A', duty);
 			break;
 		case 4:
-			mmap_gpio_write(MDIR4A, a);
-			mmap_gpio_write(MDIR4B, b);
+			gpio_set_value(MDIR4A, a);
+			gpio_set_value(MDIR4B, b);
 			set_pwm_duty(2, 'B', duty);
 			break;
 		default:
@@ -331,23 +334,23 @@ int set_motor_free_spin(int motor){
 	// set gpio direction outputs & duty
 	switch(motor){
 		case 1:
-			mmap_gpio_write(MDIR1A, 0);
-			mmap_gpio_write(MDIR1B, 0);
+			gpio_set_value(MDIR1A, 0);
+			gpio_set_value(MDIR1B, 0);
 			set_pwm_duty(1, 'A', 0.0);
 			break;
 		case 2:
-			mmap_gpio_write(MDIR2A, 0);
-			mmap_gpio_write(MDIR2B, 0);
+			gpio_set_value(MDIR2A, 0);
+			gpio_set_value(MDIR2B, 0);
 			set_pwm_duty(1, 'B', 0.0);
 			break;
 		case 3:
-			mmap_gpio_write(MDIR3A, 0);
-			mmap_gpio_write(MDIR3B, 0);
+			gpio_set_value(MDIR3A, 0);
+			gpio_set_value(MDIR3B, 0);
 			set_pwm_duty(2, 'A', 0.0);
 			break;
 		case 4:
-			mmap_gpio_write(MDIR4A, 0);
-			mmap_gpio_write(MDIR4B, 0);
+			gpio_set_value(MDIR4A, 0);
+			gpio_set_value(MDIR4B, 0);
 			set_pwm_duty(2, 'B', 0.0);
 			break;
 		default:
@@ -379,23 +382,23 @@ int set_motor_brake(int motor){
 	// set gpio direction outputs & duty
 	switch(motor){
 		case 1:
-			mmap_gpio_write(MDIR1A, 1);
-			mmap_gpio_write(MDIR1B, 1);
+			gpio_set_value(MDIR1A, 1);
+			gpio_set_value(MDIR1B, 1);
 			set_pwm_duty(1, 'A', 0.0);
 			break;
 		case 2:
-			mmap_gpio_write(MDIR2A, 1);
-			mmap_gpio_write(MDIR2B, 1);
+			gpio_set_value(MDIR2A, 1);
+			gpio_set_value(MDIR2B, 1);
 			set_pwm_duty(1, 'B', 0.0);
 			break;
 		case 3:
-			mmap_gpio_write(MDIR3A, 1);
-			mmap_gpio_write(MDIR3B, 1);
+			gpio_set_value(MDIR3A, 1);
+			gpio_set_value(MDIR3B, 1);
 			set_pwm_duty(2, 'A', 0.0);
 			break;
 		case 4:
-			mmap_gpio_write(MDIR4A, 1);
-			mmap_gpio_write(MDIR4B, 1);
+			gpio_set_value(MDIR4A, 1);
+			gpio_set_value(MDIR4B, 1);
 			set_pwm_duty(2, 'B', 0.0);
 			break;
 		default:
