@@ -47,9 +47,9 @@
 
 			/* add any i2c devices on the bus here */
 
-			bmp280@77 {
+			bmp280@76 {
 				compatible = "bmp280";
-				reg = <0x77>;
+				reg = <0x76>;
 	};
 		};
 	};
