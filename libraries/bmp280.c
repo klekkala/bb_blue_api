@@ -50,7 +50,8 @@ int power_down_barometer(){
 * If an error occurred return -1. 
 *******************************************************************************/
 int read_barometer(){
-	int fd, ch;
+	int fd;
+	float ch;
 	char buf[MAX_BUF];
 
 	snprintf(buf, sizeof(buf), SYSFS_BARO_DIR "/in_temp_input");
