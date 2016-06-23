@@ -4,7 +4,7 @@
 * simple program to display battery state
 *******************************************************************************/
 #include <useful_includes.h>
-#include <robotics_cape.h>
+#include <bb_blue_api.h>
 
 #define VOLTAGE_DISCONNECT	1	 // Threshold for detecting disconnected battery
 

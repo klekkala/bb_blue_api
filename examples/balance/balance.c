@@ -36,7 +36,7 @@ either expressed or implied, of the FreeBSD Project.
 /********************************************************************************************
 * Includes & Constants
 ********************************************************************************************/
-#include <robotics_cape.h>
+#include <bb_blue_api.h>
 
 #define SAMPLE_RATE_HZ 200	// main filter and control loop speed
 #define DT 0.005       		// 1/sample_rate

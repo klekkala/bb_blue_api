@@ -5,7 +5,7 @@
 *******************************************************************************/
 
 #include <useful_includes.h>
-#include <robotics_cape.h>
+#include <bb_blue_api.h>
 
 float width; // global variable for normalized pulse width to send
 

@@ -1,7 +1,7 @@
 // Sample Code for testing MPU-9250 IMU operation
 // James Strawson - 2013
 
-#include <robotics_cape.h>
+#include <bb_blue_api.h>
 #include <useful_includes.h>
 
 int enable_accel=0;

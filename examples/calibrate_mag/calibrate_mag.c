@@ -7,7 +7,7 @@
 * will be saved which is loaded automatically the next time the IMU is used.
 *******************************************************************************/
 
-#include <robotics_cape.h>
+#include <bb_blue_api.h>
 #include <useful_includes.h>
 
 int main(){

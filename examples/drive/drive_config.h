@@ -2,7 +2,7 @@
 // James Strawson - 2014
 // functions to load and save a config file
 
-#include <robotics_cape.h>
+#include <bb_blue_api.h>
 #include <sys/stat.h> 
 
 #define DRIVE_CONFIG_FILE "/root/robot_config/drive_config.txt"

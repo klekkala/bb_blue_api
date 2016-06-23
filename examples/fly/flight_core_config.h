@@ -3,7 +3,7 @@
 
 
 #ifndef ROBOTICS_CAPE
-#include <robotics_cape.h>
+#include <bb_blue_api.h>
 #endif
 
 #define FLY_CONFIG_FILE "/root/robot_config/fly_config.txt"

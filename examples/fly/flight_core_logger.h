@@ -4,7 +4,7 @@
 // specifically this logs IMU sensor readings to a new log file
 
 #ifndef ROBOTICS_CAPE
-#include <robotics_cape.h>
+#include <bb_blue_api.h>
 #endif
 
 #define CORE_LOG_TABLE \
