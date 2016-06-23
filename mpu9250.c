@@ -1,9 +1,8 @@
 /*******************************************************************************
-* mpu9250.c
-*
-* This is a collection of high-level functions to control the
-* MPU9250 from a BeagleBone Black as configured on the Robotics Cape.
-* Credit to Kris Winer most of the framework and register definitions.
+*Author: Kiran Kumar Lekkala
+*Created: 19 June 2016 
+*Description: This is a collection of API functions to control the MPU9250
+*from userspace using a linux based kernel driver.
 *******************************************************************************/
 
 #include "bb_blue_api.h"
@@ -65,7 +64,7 @@ int dmp_enable_feature(unsigned short mask);
 int mpu_set_dmp_state(unsigned char enable);
 int set_int_enable(unsigned char enable);
 int dmp_set_interrupt_mode(unsigned char mode);
-int read_dmp_fifo();
+int read_dmp();
 
 void* imu_interrupt_handler(void* ptr);
 int (*imu_interrupt_func)(); // pointer to user-defined function
@@ -440,6 +439,9 @@ int power_off_imu(){
 	return 0;
 }
 
+
+
+
 /*******************************************************************************
 *	Set up the IMU for DMP accelerated filtering and interrupts
 *******************************************************************************/
@@ -459,227 +461,20 @@ int initialize_imu_dmp(imu_data_t *data, imu_config_t conf){
 		printf("acceptable values: 200,100,50,40,25,20,10,8,5,4 (HZ)\n");
 		return -1;
 	}
-	
-	//set up gpio interrupt pin connected to imu
-	if(gpio_export(IMU_INTERRUPT_PIN)){
-		printf("can't export gpio %d \n", IMU_INTERRUPT_PIN);
-		return (-1);
-	}
-	gpio_set_dir(IMU_INTERRUPT_PIN, INPUT_PIN);
-	gpio_set_edge(IMU_INTERRUPT_PIN, "falling");
-	
-	// make sure the bus is not currently in use by another thread
-	// do not proceed to prevent interfering with that process
-	if(i2c_get_in_use_state(IMU_BUS)){
-		printf("WARNING: i2c bus claimed by another process\n");
-		printf("Continuing with initialize_imu_dmp() anyway\n");
-	}
-	
-	// start the i2c bus
-	if(i2c_init(IMU_BUS, IMU_ADDR)){
-		printf("initialize_imu_dmp failed at i2c_init\n");
-		return -1;
-	}
-	
-	// claiming the bus does no guarantee other code will not interfere 
-	// with this process, but best to claim it so other code can check
-	// like we did above
-	i2c_claim_bus(IMU_BUS);
-	
-	// restart the device so we start with clean registers
-	if(reset_mpu9250()<0){
-		printf("failed to reset_mpu9250()\n");
-		i2c_release_bus(IMU_BUS);
-		return -1;
-	}
-	
-	//check the who am i register to make sure the chip is alive
-	if(i2c_read_byte(IMU_BUS, WHO_AM_I_MPU9250, &c)<0){
-		printf("i2c_read_byte failed\n");
-		i2c_release_bus(IMU_BUS);
-		return -1;
-	} if(c!=0x71){
-		printf("mpu9250 WHO AM I register should return 0x71\n");
-		printf("WHO AM I returned: 0x%x\n", c);
-		i2c_release_bus(IMU_BUS);
-		return -1;
-	}
-	
-	// load in gyro calibration offsets from disk
-	if(load_gyro_offets()<0){
-		printf("ERROR: failed to load gyro calibration offsets\n");
-		i2c_release_bus(IMU_BUS);
-		return -1;
-	}
-	
-	// log locally that the dmp will be running
-	dmp_en = 1;
-	// update local copy of config and data struct with new values
-	config = conf;
-	data_ptr = data;
-	
-	// set full scale ranges and filter constants
-	set_gyro_fsr(config.gyro_fsr, data_ptr);
-	set_accel_fsr(config.accel_fsr, data_ptr);
-	set_gyro_dlpf(config.gyro_dlpf);
-	set_accel_dlpf(config.accel_dlpf);
-	
-	// Set fifo/sensor sample rate. Will have to set the DMP sample
-	// rate to match this shortly.
-	if(mpu_set_sample_rate(config.dmp_sample_rate)<0){
-		printf("ERROR: setting IMU sample rate\n");
-		i2c_release_bus(IMU_BUS);
-		return -1;
-	}
-	
-	// initialize the magnetometer too if requested in config
-	if(conf.enable_magnetometer){
-		if(initialize_magnetometer()){
-			printf("ERROR: failed to initialize_magnetometer\n");
-			i2c_release_bus(IMU_BUS);
-			return -1;
-		}
-	}
-	else power_down_magnetometer();
-	
-	
-	// set up the DMP
-	if(dmp_load_motion_driver_firmware()<0){
-		printf("failed to load DMP motion driver\n");
-		i2c_release_bus(IMU_BUS);
-		return -1;
-	}
-	if(dmp_set_orientation((unsigned short)conf.orientation)<0){
-		printf("ERROR: failed to set dmp orientation\n");
-		i2c_release_bus(IMU_BUS);
-		return -1;
-	}
-	if(dmp_enable_feature(DMP_FEATURE_6X_LP_QUAT|DMP_FEATURE_SEND_RAW_ACCEL| \
-												DMP_FEATURE_SEND_RAW_GYRO)<0){
-		printf("ERROR: failed to enable DMP features\n");
-		i2c_release_bus(IMU_BUS);
-		return -1;
-	}
-	if(dmp_set_fifo_rate(config.dmp_sample_rate)<0){
-		printf("ERROR: failed to set DMP fifo rate\n");
-		i2c_release_bus(IMU_BUS);
-		return -1;
-	}
-	if(dmp_set_interrupt_mode(DMP_INT_CONTINUOUS)<0){
-		printf("ERROR: failed to set DMP interrupt mode to continuous\n");
-		i2c_release_bus(IMU_BUS);
-		return -1;
-	}
-	if (mpu_set_dmp_state(1)<0) {
-		printf("ERROR: mpu_set_dmp_state(1) failed\n");
-		i2c_release_bus(IMU_BUS);
-		return -1;
-	}
-	
-	// set up the IMU to put magnetometer data in the fifo too if enabled
-	if(conf.enable_magnetometer){
-		// enable slave 0 (mag) in fifo
-		i2c_write_byte(IMU_BUS,FIFO_EN, FIFO_SLV0_EN);	
-		// enable master, and clock speed
-		i2c_write_byte(IMU_BUS,I2C_MST_CTRL,	0x8D);
-		// set slave 0 address to magnetometer address
-		i2c_write_byte(IMU_BUS,I2C_SLV0_ADDR,	0X8C);
-		// set mag data register to read from
-		i2c_write_byte(IMU_BUS,I2C_SLV0_REG,	AK8963_XOUT_L);
-		// set slave 0 to read 7 bytes
-		i2c_write_byte(IMU_BUS,I2C_SLV0_CTRL,	0x87);
-		packet_len += 7; // add 7 more bytes to the fifo reads
-	}
-	
-	// done with I2C for now
-	i2c_release_bus(IMU_BUS);
-	
-	#ifdef DEBUG
-	printf("packet_len: %d\n", packet_len);
-	#endif
-	
-	// start the interrupt handler thread
-	interrupt_running = 1;
-	shutdown_interrupt_thread = 0;
-	set_imu_interrupt_func(&null_func);
-	struct sched_param params;
-	params.sched_priority = config.dmp_interrupt_priority;
-	pthread_setschedparam(imu_interrupt_thread, SCHED_FIFO, &params);
-	pthread_create(&imu_interrupt_thread, NULL, \
-					imu_interrupt_handler, (void*) NULL);
-					
-	
-	
 	return 0;
 }
 
-/*******************************************************************************
- *  @brief      Write to the DMP memory.
- *  This function prevents I2C writes past the bank boundaries. The DMP memory
- *  is only accessible when the chip is awake.
- *  @param[in]  mem_addr    Memory location (bank << 8 | start address)
- *  @param[in]  length      Number of bytes to write.
- *  @param[in]  data        Bytes to write to memory.
- *  @return     0 if successful.
-*******************************************************************************/
-int mpu_write_mem(unsigned short mem_addr, unsigned short length,\
-												unsigned char *data){
-    unsigned char tmp[2];
 
-    if (!data)
-        return -1;
-	
-    tmp[0] = (unsigned char)(mem_addr >> 8);
-    tmp[1] = (unsigned char)(mem_addr & 0xFF);
 
-    /* Check bank boundaries. */
-    if (tmp[1] + length > MPU6500_BANK_SIZE){
-		printf("mpu_write_mem exceeds bank size\n");
-        return -1;
-	}
-    if (i2c_write_bytes(IMU_BUS,MPU6500_BANK_SEL, 2, tmp))
-        return -1;
-    if (i2c_write_bytes(IMU_BUS,MPU6500_MEM_R_W, length, data))
-        return -1;
-    return 0;
-}
-
-/*******************************************************************************
- *  @brief      Read from the DMP memory.
- *  This function prevents I2C reads past the bank boundaries. The DMP memory
- *  is only accessible when the chip is awake.
- *  @param[in]  mem_addr    Memory location (bank << 8 | start address)
- *  @param[in]  length      Number of bytes to read.
- *  @param[out] data        Bytes read from memory.
- *  @return     0 if successful.
-*******************************************************************************/
-int mpu_read_mem(unsigned short mem_addr, unsigned short length,\
-												unsigned char *data){
-    unsigned char tmp[2];
-
-    if (!data)
-        return -1;
-
-    tmp[0] = (unsigned char)(mem_addr >> 8);
-    tmp[1] = (unsigned char)(mem_addr & 0xFF);
-
-    /* Check bank boundaries. */
-    if (tmp[1] + length > MPU6500_BANK_SIZE){
-		printf("mpu_read_mem exceeds bank size\n");
-        return -1;
-	}
-    if (i2c_write_bytes(IMU_BUS,MPU6500_BANK_SEL, 2, tmp))
-        return -1;
-    if (i2c_read_bytes(IMU_BUS,MPU6500_MEM_R_W, length, data)!=length)
-        return -1;
-    return 0;
-}
 
 /*******************************************************************************
 * int dmp_load_motion_driver_firmware()
 *
 * loads pre-compiled firmware binary from invensense onto dmp
 *******************************************************************************/
+
+
+
 int dmp_load_motion_driver_firmware(){
 	
 	unsigned short ii;
@@ -687,37 +482,11 @@ int dmp_load_motion_driver_firmware(){
     /* Must divide evenly into st.hw->bank_size to avoid bank crossings. */
 
     unsigned char cur[DMP_LOAD_CHUNK], tmp[2];
-
-	// make sure the address is set correctly
-	i2c_set_device_address(IMU_BUS, IMU_ADDR);
-	
-	// loop through 16 bytes at a time and check each write
-	// for corruption
-    for (ii=0; ii<DMP_CODE_SIZE; ii+=this_write) {
-        this_write = min(DMP_LOAD_CHUNK, DMP_CODE_SIZE - ii);
-        if (mpu_write_mem(ii, this_write, (uint8_t*)&dmp_firmware[ii])){
-			printf("dmp firmware write failed\n");
-            return -1;
-		}
-        if (mpu_read_mem(ii, this_write, cur)){
-			printf("dmp firmware read failed\n");
-            return -1;
-		}
-        if (memcmp(dmp_firmware+ii, cur, this_write)){
-			printf("dmp firmware write corrupted\n");
-            return -2;
-		}
-    }
-
-    /* Set program start address. */
-    tmp[0] = dmp_start_addr >> 8;
-    tmp[1] = dmp_start_addr & 0xFF;
-    if (i2c_write_bytes(IMU_BUS, MPU6500_PRGM_START_H, 2, tmp)){
-        return -1;
-	}
 	
     return 0;
 }
+
+
 
 /*******************************************************************************
  *  @brief      Push gyro and accel orientation to the DMP.
@@ -770,12 +539,17 @@ int dmp_set_orientation(unsigned short orient){
     return 0;
 }
 
+
+
 /*******************************************************************************
  *  @brief      Set DMP output rate.
  *  Only used when DMP is on.
  *  @param[in]  rate    Desired fifo rate (Hz).
  *  @return     0 if successful.
 *******************************************************************************/
+
+
+
 int dmp_set_fifo_rate(unsigned short rate){
     const unsigned char regs_end[12] = {DINAFE, DINAF2, DINAAB,
         0xc4, DINAAA, DINAF1, DINADF, DINADF, 0xBB, 0xAF, DINADF, DINADF};
@@ -788,61 +562,11 @@ int dmp_set_fifo_rate(unsigned short rate){
 	
 	// set the samplerate divider
     div = 1000 / rate - 1;
-	if(i2c_write_byte(IMU_BUS, SMPLRT_DIV, div)){
-		printf("I2C bus write error\n");
-		return -1;
-	} 
-	
-	// set the DMP scaling factors
-	//div = DMP_SAMPLE_RATE / rate - 1;
-	//div = (1000 / rate) - 1;
-	div = 0; // DMP and FIFO will be at the same rate always
-    tmp[0] = (unsigned char)((div >> 8) & 0xFF);
-    tmp[1] = (unsigned char)(div & 0xFF);
-    if (mpu_write_mem(D_0_22, 2, tmp))
-        return -1;
-    if (mpu_write_mem(CFG_6, 12, (unsigned char*)regs_end))
-        return -1;
 
     return 0;
 }
 
-/*******************************************************************************
-* int mpu_set_bypass(unsigned char bypass_on)
-* 
-* configures the USER_CTRL and INT_PIN_CFG registers to turn on and off the
-* i2c bypass mode for talking to the magnetometer. In random read mode this
-* is used to turn on the bypass and left as is. In DMP mode bypass is turned
-* off after configuration and the MPU fetches magnetometer data automatically.
-* USER_CTRL - based on global variable dsp_en
-* INT_PIN_CFG based on requested bypass state
-*******************************************************************************/
-int mpu_set_bypass(uint8_t bypass_on){
-    uint8_t tmp = 0;
 
-    // set up USER_CTRL first
-	if(dmp_en)
-		tmp |= FIFO_EN_BIT; // enable fifo for dsp mode
-	if(!bypass_on)
-		tmp |= I2C_MST_EN; // i2c master mode when not in bypass
-	if (i2c_write_byte(IMU_BUS, USER_CTRL, tmp))
-            return -1;
-    usleep(3000);
-	
-	// INT_PIN_CFG settings
-	tmp = LATCH_INT_EN | INT_ANYRD_CLEAR | ACTL_ACTIVE_LOW;
-	if(bypass_on)
-		tmp |= BYPASS_EN;
-	if (i2c_write_byte(IMU_BUS, INT_PIN_CFG, tmp))
-            return -1;
-		
-	if(bypass_on)
-		bypass_en = 1;
-	else
-		bypass_en = 0;
-	
-	return 0;
-}
 
 /*******************************************************************************
 * int dmp_enable_feature(unsigned short mask)
@@ -861,115 +585,6 @@ int dmp_enable_feature(unsigned short mask){
     tmp[1] = (unsigned char)((GYRO_SF >> 16) & 0xFF);
     tmp[2] = (unsigned char)((GYRO_SF >> 8) & 0xFF);
     tmp[3] = (unsigned char)(GYRO_SF & 0xFF);
-    mpu_write_mem(D_0_104, 4, tmp);
-
-    /* Send sensor data to the FIFO. */
-    tmp[0] = 0xA3;
-    if (mask & DMP_FEATURE_SEND_RAW_ACCEL) {
-        tmp[1] = 0xC0;
-        tmp[2] = 0xC8;
-        tmp[3] = 0xC2;
-    } else {
-        tmp[1] = 0xA3;
-        tmp[2] = 0xA3;
-        tmp[3] = 0xA3;
-    }
-    if (mask & DMP_FEATURE_SEND_ANY_GYRO) {
-        tmp[4] = 0xC4;
-        tmp[5] = 0xCC;
-        tmp[6] = 0xC6;
-    } else {
-        tmp[4] = 0xA3;
-        tmp[5] = 0xA3;
-        tmp[6] = 0xA3;
-    }
-    tmp[7] = 0xA3;
-    tmp[8] = 0xA3;
-    tmp[9] = 0xA3;
-    mpu_write_mem(CFG_15,10,tmp);
-
-    /* Send gesture data to the FIFO. */
-    if (mask & (DMP_FEATURE_TAP | DMP_FEATURE_ANDROID_ORIENT))
-        tmp[0] = DINA20;
-    else
-        tmp[0] = 0xD8;
-    mpu_write_mem(CFG_27,1,tmp);
-
-    if (mask & DMP_FEATURE_GYRO_CAL)
-        dmp_enable_gyro_cal(1);
-    else
-        dmp_enable_gyro_cal(0);
-
-    if (mask & DMP_FEATURE_SEND_ANY_GYRO) {
-        if (mask & DMP_FEATURE_SEND_CAL_GYRO) {
-            tmp[0] = 0xB2;
-            tmp[1] = 0x8B;
-            tmp[2] = 0xB6;
-            tmp[3] = 0x9B;
-        } else {
-            tmp[0] = DINAC0;
-            tmp[1] = DINA80;
-            tmp[2] = DINAC2;
-            tmp[3] = DINA90;
-        }
-        mpu_write_mem(CFG_GYRO_RAW_DATA, 4, tmp);
-    }
-
-    // if (mask & DMP_FEATURE_TAP) {
-        // /* Enable tap. */
-        // tmp[0] = 0xF8;
-        // mpu_write_mem(CFG_20, 1, tmp);
-        // dmp_set_tap_thresh(TAP_XYZ, 250);
-        // dmp_set_tap_axes(TAP_XYZ);
-        // dmp_set_tap_count(1);
-        // dmp_set_tap_time(100);
-        // dmp_set_tap_time_multi(500);
-
-        // dmp_set_shake_reject_thresh(GYRO_SF, 200);
-        // dmp_set_shake_reject_time(40);
-        // dmp_set_shake_reject_timeout(10);
-    // } else {
-        // tmp[0] = 0xD8;
-        // mpu_write_mem(CFG_20, 1, tmp);
-    // }
-	
-	// disable tap feature
-	tmp[0] = 0xD8;
-	mpu_write_mem(CFG_20, 1, tmp);
-
-	
-    // if (mask & DMP_FEATURE_ANDROID_ORIENT) {
-        // tmp[0] = 0xD9;
-    // } else
-        // tmp[0] = 0xD8;
-	
-	// disable orientation feature
-	tmp[0] = 0xD8;
-    mpu_write_mem(CFG_ANDROID_ORIENT_INT, 1, tmp);
-
-    if (mask & DMP_FEATURE_LP_QUAT)
-        dmp_enable_lp_quat(1);
-    else
-        dmp_enable_lp_quat(0);
-
-    if (mask & DMP_FEATURE_6X_LP_QUAT)
-        dmp_enable_6x_lp_quat(1);
-    else
-        dmp_enable_6x_lp_quat(0);
-
-    // /* Pedometer is always enabled. */
-    // dmp.feature_mask = mask | DMP_FEATURE_PEDOMETER;
-    mpu_reset_fifo();
-
-    packet_len = 0;
-    if (mask & DMP_FEATURE_SEND_RAW_ACCEL)
-        packet_len += 6;
-    if (mask & DMP_FEATURE_SEND_ANY_GYRO)
-        packet_len += 6;
-    if (mask & (DMP_FEATURE_LP_QUAT | DMP_FEATURE_6X_LP_QUAT))
-        packet_len += 16;
-    // if (mask & (DMP_FEATURE_TAP | DMP_FEATURE_ANDROID_ORIENT))
-        // dmp.packet_length += 4;
 
     return 0;
 }
@@ -1190,88 +805,7 @@ int mpu_set_dmp_state(unsigned char enable){
     return 0;
 }
 
-/*******************************************************************************
-* void* imu_interrupt_handler(void* ptr)
-*
-* Here is where the magic happens. This function runs as its own thread and 
-* monitors the gpio pin IMU_INTERRUPT_PIN with the blocking function call 
-* poll(). If a valid interrupt is received from the IMU then mark the timestamp,
-* read in the IMU data, and call the user-defined interrupt function if set.
-*******************************************************************************/
-void* imu_interrupt_handler(void* ptr){ 
-	struct pollfd fdset[1];
-	int ret;
-	char buf[64];
-	int first_run = 1;
-	int imu_gpio_fd = gpio_fd_open(IMU_INTERRUPT_PIN);
-	if(imu_gpio_fd == -1){
-		printf("ERROR: can't open IMU_INTERRUPT_PIN gpio fd\n");
-		printf("aborting imu_interrupt_handler\n");
-		return NULL;
-	}
-	fdset[0].fd = imu_gpio_fd;
-	fdset[0].events = POLLPRI;
-	// keep running until the program closes
-	mpu_reset_fifo();
-	while(get_state()!=EXITING && shutdown_interrupt_thread != 1) {
-		// system hangs here until IMU FIFO interrupt
-		poll(fdset, 1, IMU_POLL_TIMEOUT); 
-		if (fdset[0].revents & POLLPRI) {
-			lseek(fdset[0].fd, 0, SEEK_SET);  
-			read(fdset[0].fd, buf, 64);
-			
-			// interrupt received, mark the timestamp
-			last_interrupt_timestamp_micros = micros_since_epoch();
-			
-			// try to load fifo no matter the claim bus state
-			if(i2c_get_in_use_state(IMU_BUS)){
-				printf("WARNING: Something has claimed the I2C bus when an\n");
-				printf("IMU interrupt was received. Reading IMU anyway.\n");
-			}
-			i2c_claim_bus(IMU_BUS);
-			ret = read_dmp_fifo();
-			i2c_release_bus(IMU_BUS);
-			
-			// record if it was successful or not
-			if (ret==0) last_read_successful=1;
-			else last_read_successful=0;
-			
-			// call the user function if not the first run
-			if(first_run == 1){
-				first_run = 0;
-			}
-			else if(interrupt_running){
-				 imu_interrupt_func(); 
-			}
-		}
-	}
-	#ifdef DEBUG
-	printf("exiting imu interrupt handler thread\n");
-	#endif
-	gpio_fd_close(imu_gpio_fd);
-	return 0;
-}
 
-/*******************************************************************************
-* int set_imu_interrupt_func(int (*func)(void))
-*
-* sets a user function to be called when new data is read
-*******************************************************************************/
-int set_imu_interrupt_func(int (*func)(void)){
-	imu_interrupt_func = func;
-	interrupt_running = 1;
-	return 0;
-}
-
-/*******************************************************************************
-* int stop_imu_interrupt_func()
-*
-* stops the user function from being called when new data is available
-*******************************************************************************/
-int stop_imu_interrupt_func(){
-	interrupt_running = 0;
-	return 0;
-}
 
 /*******************************************************************************
 * int read_dmp_fifo()
@@ -1742,125 +1276,6 @@ int load_gyro_offets(){
 	return 0;	
 }
 
-/*******************************************************************************
-* int calibrate_gyro_routine()
-*
-* Initializes the IMU and samples the gyro for a short period to get steady
-* state gyro offsets. These offsets are then saved to disk for later use.
-*******************************************************************************/
-int calibrate_gyro_routine(){
-	uint8_t c, data[6];
-	int32_t gyro_sum[3] = {0, 0, 0};
-	int16_t offsets[3];
-	
-	// make sure the bus is not currently in use by another thread
-	// do not proceed to prevent interfering with that process
-	if(i2c_get_in_use_state(IMU_BUS)){
-		printf("i2c bus claimed by another process\n");
-		printf("aborting gyro calibration()\n");
-		return -1;
-	}
-	
-	// if it is not claimed, start the i2c bus
-	if(i2c_init(IMU_BUS, IMU_ADDR)){
-		printf("initialize_imu_dmp failed at i2c_init\n");
-		return -1;
-	}
-	
-	// claiming the bus does no guarantee other code will not interfere 
-	// with this process, but best to claim it so other code can check
-	// like we did above
-	i2c_claim_bus(IMU_BUS);
-	
-	// reset device, reset all registers
-	if(reset_mpu9250()<0){
-		printf("ERROR: failed to reset MPU9250\n");
-		return -1;
-	}
-
-	// set up the IMU specifically for calibration. 
-	i2c_write_byte(IMU_BUS, PWR_MGMT_1, 0x01);  
-	i2c_write_byte(IMU_BUS, PWR_MGMT_2, 0x00); 
-	usleep(200000);
-	
-	// // set bias registers to 0
-	// // Push gyro biases to hardware registers
-	// uint8_t zeros[] = {0,0,0,0,0,0};
-	// if(i2c_write_bytes(IMU_BUS, XG_OFFSET_H, 6, zeros)){
-		// printf("ERROR: failed to load gyro offsets into IMU register\n");
-		// return -1;
-	// }
-
-	i2c_write_byte(IMU_BUS, INT_ENABLE, 0x00);  // Disable all interrupts
-	i2c_write_byte(IMU_BUS, FIFO_EN, 0x00);     // Disable FIFO
-	i2c_write_byte(IMU_BUS, PWR_MGMT_1, 0x00);  // Turn on internal clock source
-	i2c_write_byte(IMU_BUS, I2C_MST_CTRL, 0x00);// Disable I2C master
-	i2c_write_byte(IMU_BUS, USER_CTRL, 0x00);   // Disable FIFO and I2C master
-	i2c_write_byte(IMU_BUS, USER_CTRL, 0x0C);   // Reset FIFO and DMP
-	usleep(15000);
-
-	// Configure MPU9250 gyro and accelerometer for bias calculation
-	i2c_write_byte(IMU_BUS, CONFIG, 0x01);      // Set low-pass filter to 188 Hz
-	i2c_write_byte(IMU_BUS, SMPLRT_DIV, 0x04);  // Set sample rate to 200hz
-	// Set gyro full-scale to 250 degrees per second, maximum sensitivity
-	i2c_write_byte(IMU_BUS, GYRO_CONFIG, 0x00); 
-	// Set accelerometer full-scale to 2 g, maximum sensitivity	
-	i2c_write_byte(IMU_BUS, ACCEL_CONFIG, 0x00); 
-	// Configure FIFO to capture gyro data for bias calculation
-	i2c_write_byte(IMU_BUS, USER_CTRL, 0x40);   // Enable FIFO  
-	// Enable gyro sensors for FIFO (max size 512 bytes in MPU-9250)
-	c = FIFO_GYRO_X_EN|FIFO_GYRO_Y_EN|FIFO_GYRO_Z_EN;
-	i2c_write_byte(IMU_BUS, FIFO_EN, c); 
-	// 6 bytes per sample. 200hz. wait 0.4 seconds
-	usleep(400000);
-
-	// At end of sample accumulation, turn off FIFO sensor read
-	i2c_write_byte(IMU_BUS, FIFO_EN, 0x00);   
-	// read FIFO sample count and log number of samples
-	i2c_read_bytes(IMU_BUS, FIFO_COUNTH, 2, &data[0]); 
-	int16_t fifo_count = ((uint16_t)data[0] << 8) | data[1];
-	int samples = fifo_count/6;
-
-	#ifdef DEBUG
-	printf("calibration samples: %d\n", samples);
-	#endif
-	
-	int i;
-	int16_t x,y,z;
-	for (i=0; i<samples; i++) {
-		// read data for averaging
-		if(i2c_read_bytes(IMU_BUS, FIFO_R_W, 6, data)<0){
-			printf("ERROR: failed to read FIFO\n");
-			return -1;
-		}
-		x = (int16_t)(((int16_t)data[0] << 8) | data[1]) ;
-		y = (int16_t)(((int16_t)data[2] << 8) | data[3]) ;
-		z = (int16_t)(((int16_t)data[4] << 8) | data[5]) ;
-		gyro_sum[0]  += (int32_t) x;
-		gyro_sum[1]  += (int32_t) y;
-		gyro_sum[2]  += (int32_t) z;
-	}
-  
-	#ifdef DEBUG
-	printf("gyro sums: %d %d %d\n", gyro_sum[0], gyro_sum[1], gyro_sum[2]);
-	#endif
-	
-	// done with I2C for now
-	i2c_release_bus(IMU_BUS);
-	
-	// average out the samples
-    offsets[0] = (int16_t) (gyro_sum[0]/(int32_t)samples);
-	offsets[1] = (int16_t) (gyro_sum[1]/(int32_t)samples);
-	offsets[2] = (int16_t) (gyro_sum[2]/(int32_t)samples);
- 
-	printf("offsets: %d %d %d\n", offsets[0], offsets[1], offsets[2]);
- 
-	// write to disk
-	if(write_gyro_offets_to_disk(offsets)<0){
-		return -1;
-	}
-	return 0;
-}
 
 /*******************************************************************************
 * unsigned short inv_row_2_scale(signed char row[])
