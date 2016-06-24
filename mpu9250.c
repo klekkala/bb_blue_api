@@ -488,58 +488,6 @@ int dmp_load_motion_driver_firmware(){
 
 
 
-/*******************************************************************************
- *  @brief      Push gyro and accel orientation to the DMP.
- *  The orientation is represented here as the output of
- *  @e inv_orientation_matrix_to_scalar.
- *  @param[in]  orient  Gyro and accel orientation in body frame.
- *  @return     0 if successful.
-*******************************************************************************/
-int dmp_set_orientation(unsigned short orient){
-    unsigned char gyro_regs[3], accel_regs[3];
-    const unsigned char gyro_axes[3] = {DINA4C, DINACD, DINA6C};
-    const unsigned char accel_axes[3] = {DINA0C, DINAC9, DINA2C};
-    const unsigned char gyro_sign[3] = {DINA36, DINA56, DINA76};
-    const unsigned char accel_sign[3] = {DINA26, DINA46, DINA66};
-
-    gyro_regs[0] = gyro_axes[orient & 3];
-    gyro_regs[1] = gyro_axes[(orient >> 3) & 3];
-    gyro_regs[2] = gyro_axes[(orient >> 6) & 3];
-    accel_regs[0] = accel_axes[orient & 3];
-    accel_regs[1] = accel_axes[(orient >> 3) & 3];
-    accel_regs[2] = accel_axes[(orient >> 6) & 3];
-
-    /* Chip-to-body, axes only. */
-    if (mpu_write_mem(FCFG_1, 3, gyro_regs))
-        return -1;
-    if (mpu_write_mem(FCFG_2, 3, accel_regs))
-        return -1;
-
-    memcpy(gyro_regs, gyro_sign, 3);
-    memcpy(accel_regs, accel_sign, 3);
-    if (orient & 4) {
-        gyro_regs[0] |= 1;
-        accel_regs[0] |= 1;
-    }
-    if (orient & 0x20) {
-        gyro_regs[1] |= 1;
-        accel_regs[1] |= 1;
-    }
-    if (orient & 0x100) {
-        gyro_regs[2] |= 1;
-        accel_regs[2] |= 1;
-    }
-
-    /* Chip-to-body, sign only. */
-    if (mpu_write_mem(FCFG_3, 3, gyro_regs))
-        return -1;
-    if (mpu_write_mem(FCFG_7, 3, accel_regs))
-        return -1;
-    //dmp.orient = orient;
-    return 0;
-}
-
-
 
 /*******************************************************************************
  *  @brief      Set DMP output rate.
@@ -1225,55 +1173,6 @@ int write_gyro_offets_to_disk(int16_t offsets[3]){
 	fclose(cal);
 	return 0;	
 	
-}
-
-/*******************************************************************************
-* int load_gyro_offsets()
-*
-* Loads steady state gyro offsets from the disk and puts them in the IMU's 
-* gyro offset register. If no calibration file exists then make a new one.
-*******************************************************************************/
-int load_gyro_offets(){
-	FILE *cal;
-	char file_path[100];
-	uint8_t data[6];
-	int x,y,z;
-	
-	// construct a new file path string and open for reading
-	strcpy (file_path, CONFIG_DIRECTORY);
-	strcat (file_path, GYRO_CAL_FILE);
-	cal = fopen(file_path, "r");
-	
-	if (cal == 0) {
-		// calibration file doesn't exist yet
-		printf("WARNING: no gyro calibration data found\n");
-		printf("Please run calibrate_gyro\n\n");
-		return -1;
-	}
-	// read in data
-	fscanf(cal,"%d\n%d\n%d\n", &x,&y,&z);
-		
-	#ifdef DEBUG
-	printf("offsets: %d %d %d\n", x, y, z);
-	#endif
-	
-	// Divide by 4 to get 32.9 LSB per deg/s to conform to expected bias input 
-	// format. also make negative since we wish to subtract out the steady 
-	// state offset
-	data[0] = (-x/4  >> 8) & 0xFF; 
-	data[1] = (-x/4)       & 0xFF; 
-	data[2] = (-y/4  >> 8) & 0xFF;
-	data[3] = (-y/4)       & 0xFF;
-	data[4] = (-z/4  >> 8) & 0xFF;
-	data[5] = (-z/4)       & 0xFF;
-
-	// Push gyro biases to hardware registers
-	if(i2c_write_bytes(IMU_BUS, XG_OFFSET_H, 6, &data[0])){
-		printf("ERROR: failed to load gyro offsets into IMU register\n");
-		return -1;
-	}
-	fclose(cal);
-	return 0;	
 }
 
 
