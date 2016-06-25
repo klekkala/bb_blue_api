@@ -42,6 +42,7 @@ imu_data_t* data_ptr;
 /*******************************************************************************
 *	config functions for internal use only
 *******************************************************************************/
+int read_raw_data(directory);
 int reset_mpu9250();
 int initialize_magnetometer(imu_data_t* data);
 int power_down_magnetometer();
@@ -131,6 +132,27 @@ int initialize_imu(imu_data_t *data, imu_config_t conf){
 	return 0;
 }
 
+
+int read_raw_data(directory){
+
+	int fd, val;
+	char buf[MAX_BUF];
+
+	snprintf(buf, sizeof(buf), directory);
+	fd = open(buf, O_RDONLY);
+
+	if (fd < 0) {
+		perror("error openning raw sysfs entries");
+		/*Still some changs to make in the error handling*/
+		return fd;
+	}
+
+	// Turn the MSB and LSB into a signed 16-bit value
+	read(fd, &val, 4);
+	close(fd);
+
+	return val;
+}
 /*******************************************************************************
 * int read_accel_data(imu_data_t* data)
 * 
@@ -139,35 +161,11 @@ int initialize_imu(imu_data_t *data, imu_config_t conf){
 *******************************************************************************/
 int read_accel_data(imu_data_t *data){
 	// new register data stored here
-
-	int fd;
-	char buf1[MAX_BUF], buf2[MAX_BUF], buf[MAX_BUF];
-	int accel_val;
-
-	snprintf(buf1, sizeof(buf), SYSFS_MPU_DIR "/in_accel_x_raw");
-	snprintf(buf2, sizeof(buf), SYSFS_MPU_DIR "/in_accel_y_raw");
-	snprintf(buf3, sizeof(buf), SYSFS_MPU_DIR "/in_accel_z_raw");
-
-	fd1 = open(buf1, O_RDONLY);
-	fd2 = open(buf2, O_RDONLY);
-	fd3 = open(buf3, O_RDONLY);
-
-	if (fd1 < 0 || fd2 < 0 || fd3 < 0) {
-		perror("error openning in_accel_raw sysfs entries");
-		/*Still some changs to make in the error handling*/
-		return fd1;
-	}
-
-	// Turn the MSB and LSB into a signed 16-bit value
-	read(fd1, &accel_val, 4);
-	data->raw_accel[0] = accel_val;
-	read(fd2, &accel_val, 4);
-	data->raw_accel[0] = accel_val;
-	read(fd3, &accel_val, 4);
-	data->raw_accel[0] = accel_val;
-
-	close(fd);
 	
+	data->raw_accel[0] = read_raw_data(SYSFS_MPU_DIR "/in_accel_x_raw");
+	data->raw_accel[0] = read_raw_data(SYSFS_MPU_DIR "/in_accel_y_raw");
+	data->raw_accel[0] = read_raw_data(SYSFS_MPU_DIR "/in_accel_z_raw");
+
 	// Fill in real unit values
 	data->accel[0] = data->raw_accel[0] * data->accel_to_ms2;
 	data->accel[1] = data->raw_accel[1] * data->accel_to_ms2;
@@ -183,36 +181,12 @@ int read_accel_data(imu_data_t *data){
 * at 1khz and this retrieves the latest data.
 *******************************************************************************/
 int read_gyro_data(imu_data_t *data){
-	// new register data stored here
-	uint8_t raw[6];
-	
-	int fd;
-	char buf1[MAX_BUF], buf2[MAX_BUF], buf3[MAX_BUF];
-	int gyro_val;
-
-	snprintf(buf1, sizeof(buf), SYSFS_MPU_DIR "/in_anglvel_x_raw");
-	snprintf(buf2, sizeof(buf), SYSFS_MPU_DIR "/in_anglvel_y_raw");
-	snprintf(buf3, sizeof(buf), SYSFS_MPU_DIR "/in_anglvel_z_raw");
-
-	fd1 = open(buf1, O_RDONLY);
-	fd2 = open(buf2, O_RDONLY);
-	fd3 = open(buf3, O_RDONLY);
-
-	if (fd1 < 0 || fd2 < 0 || fd3 < 0) {
-		perror("error openning in_gyro_raw sysfs entries");
-		/*Still some changs to make in the error handling*/
-		return fd1;
-	}
 
 	// Turn the MSB and LSB into a signed 16-bit value
-	read(fd1, &accel_val, 4);
-	data->raw_accel[0] = gyro_val;
-	read(fd2, &accel_val, 4);
-	data->raw_accel[0] = gyro_val;
-	read(fd3, &accel_val, 4);
-	data->raw_accel[0] = gyro_val;
+	data->raw_gyro[0] = read_raw_data(SYSFS_MPU_DIR "/in_gyro_x_raw");
+	data->raw_gyro[1] = read_raw_data(SYSFS_MPU_DIR "/in_gyro_y_raw");
+	data->raw_gyro[2] = read_raw_data(SYSFS_MPU_DIR "/in_gyro_z_raw");
 
-	close(fd);
 
 	// Fill in real unit values
 	data->gyro[0] = data->raw_gyro[0] * data->gyro_to_degs;
@@ -230,36 +204,11 @@ int read_gyro_data(imu_data_t *data){
 * the values in imu_data_t struct are left alone.
 *******************************************************************************/
 int read_mag_data(imu_data_t* data){
-	// new register data stored here
-	uint8_t raw[6];
-	
-	int fd;
-	char buf1[MAX_BUF], buf2[MAX_BUF], buf3[MAX_BUF];
-	int mag_val;
-
-	snprintf(buf1, sizeof(buf), SYSFS_MPU_DIR "/in_mag_x_raw");
-	snprintf(buf2, sizeof(buf), SYSFS_MPU_DIR "/in_mag_y_raw");
-	snprintf(buf3, sizeof(buf), SYSFS_MPU_DIR "/in_mag_z_raw");
-
-	fd1 = open(buf1, O_RDONLY);
-	fd2 = open(buf2, O_RDONLY);
-	fd3 = open(buf3, O_RDONLY);
-
-	if (fd1 < 0 || fd2 < 0 || fd3 < 0) {
-		perror("error openning in_mag_raw sysfs entries");
-		/*Still some changs to make in the error handling*/
-		return fd1;
-	}
 
 	// Turn the MSB and LSB into a signed 16-bit value
-	read(fd1, &mag_val, 4);
-	data->raw_mag[0] = mag_val;
-	read(fd2, &accel_val, 4);
-	data->raw_accel[0] = gyro_val;
-	read(fd3, &accel_val, 4);
-	data->raw_accel[0] = gyro_val;
-
-	close(fd);
+	data->raw_mag[0] = read_raw_data(SYSFS_MPU_DIR "/in_magn_x_raw");
+	data->raw_mag[0] = read_raw_data(SYSFS_MPU_DIR "/in_magn_y_raw");
+	data->raw_mag[0] = read_raw_data(SYSFS_MPU_DIR "/in_magn_z_raw");
 
 	// multiply by the sensitivity adjustment and convert to
 	// units of uT micro Teslas
@@ -279,9 +228,60 @@ int read_imu_temp(imu_data_t* data){
 	int temp_val;
 	
 	int fd;
-	char buf1[MAX_BUF], buf2[MAX_BUF], buf3[MAX_BUF];
+	char buf[MAX_BUF];
 
 	snprintf(buf1, sizeof(buf), SYSFS_MPU_DIR "/in_temp_raw");
+	fd3 = open(buf3, O_RDONLY);
+
+	if (fd1 < 0) {
+		perror("error openning in_temp_raw sysfs entries");
+		/*Still some changs to make in the error handling*/
+		return fd;
+	}
+
+	// Turn the MSB and LSB into a signed 16-bit value
+	read(fd1, &temp_val, 4);
+	close(fd);
+
+	// convert to real units
+	data->temp = ((float)(temp_val)/TEMP_SENSITIVITY) + 21.0;
+	return 0;
+	
+}
+
+
+
+int set_offset(****directory, int16_t offset){
+
+	int fd;
+	char buf[MAX_BUF]
+	snprintf(buf, sizeof(buf), directory);
+	fd = open(buf, O_WRONLY);
+
+	if (fd < 0) {
+		perror("unable to set offset in **");
+		return fd;
+	}
+
+	write(fd1, offset, 4);
+	close(fd);
+
+	return 0;
+}
+
+
+/*******************************************************************************
+* int read_imu_temp(imu_data_t* data)
+*
+* reads the latest temperature of the imu. 
+*******************************************************************************/
+int set_offset(****directory){
+	int temp_val;
+	
+	int fd;
+	char buf1[MAX_BUF];
+
+	snprintf(buf, sizeof(buf), SYSFS_MPU_DIR "/in_temp_raw");
 	fd3 = open(buf3, O_RDONLY);
 
 	if (fd1 < 0) {
@@ -291,16 +291,188 @@ int read_imu_temp(imu_data_t* data){
 	}
 
 	// Turn the MSB and LSB into a signed 16-bit value
-	read(fd1, &temp_val, 4);
-	data->raw_mag[0] = temp_val;
-
+	read(fd1, &temp_val, 20);
 	close(fd);
-	
+
 	// convert to real units
 	data->temp = ((float)(temp_val)/TEMP_SENSITIVITY) + 21.0;
 	return 0;
+	
+}
+
+int write_to_disk(CAL_FILE, matrix){
+	// construct a new file path string and open for writing
+	strcpy(file_path, CONFIG_DIRECTORY);
+	strcat(file_path, CAL_FILE);
+	cal = fopen(file_path, "w");
+	// if opening for writing failed, the directory may not exist yet
+	if (cal == 0) {
+		mkdir(CONFIG_DIRECTORY, 0777);
+		cal = fopen(file_path, "w");
+		if (cal == 0){
+			printf("could not open config directory\n");
+			printf(CONFIG_DIRECTORY);
+			printf("\n");
+			return -1;
+		}
+	}
+	
+	// write to the file, close, and exit
+	if(fprintf(cal,"%d %d %d\n%d %d %d\n%d %d %d\n", matrix[0][0], matrix[0][1], matrix[0][2],
+													matrix[1][0], matrix[1][1], matrix[1][2],
+													matrix[2][0], matrix[2][1], matrix[2][2])<0){
+
+		printf("Failed to write offsets to %s\n", CAL_FILE);
+		fclose(cal);
+		return -1;
+	}
+	fclose(cal);
+	return 0;	
+}
+
+/*******************************************************************************
+* int write_accel_offsets_to_disk(int16_t offsets[3])
+*
+* Reads steady state accel offsets from the disk and puts them in the IMU's 
+* accel offset register. If no calibration file exists then make a new one.
+*******************************************************************************/
+int write_accel_offets_to_disk(int16_t offsets[3]){
+	FILE *cal;
+	char file_path[100];
+	int16_t matrix[3][3];
+	int fd;
+	if(set_offset(SYSFS_MPU_DIR "/in_anglvel_x_calibbias", offsets[0]) != 0
+		|| set_offset(SYSFS_MPU_DIR "/in_anglvel_y_calibbias", offsets[0] != 0)
+		|| set_offset(SYSFS_MPU_DIR "/in_anglvel_z_calibbias", offsets[0]) != 0){
+		return -1
+	}
+
+	// construct a new file path string and open for writing
+	strcpy(file_path, CONFIG_DIRECTORY);
+	strcat(file_path, GYRO_CAL_FILE);
+	cal = fopen(file_path, "w");
+	// if opening for writing failed, the directory may not exist yet
+	if (cal == 0) {
+		mkdir(CONFIG_DIRECTORY, 0777);
+		cal = fopen(file_path, "w");
+		if (cal == 0){
+			printf("could not open config directory\n");
+			printf(CONFIG_DIRECTORY);
+			printf("\n");
+			return -1;
+		}
+	}
+	
+	// write to the file, close, and exit
+	if(fprintf(cal,"%d %d %d\n%d %d %d\n%d %d %d\n", matrix[0][0], matrix[0][1], matrix[0][2],
+													matrix[1][0], matrix[1][1], matrix[1][2],
+													matrix[2][0], matrix[2][1], matrix[2][2])<0){
+
+		printf("Failed to write gyro offsets to file\n");
+		fclose(cal);
+		return -1;
+	}
+	fclose(cal);
+	return 0;	
+	
+}
+
+
+/*******************************************************************************
+* int write_gyro_offsets_to_disk(int16_t offsets[3])
+*
+* Reads steady state gyro offsets from the disk and puts them in the IMU's 
+* gyro offset register. If no calibration file exists then make a new one.
+*******************************************************************************/
+int load_gyro_offset_scale(int16_t offsets[3]){
+	FILE *cal;
+	char file_path[100];
+
+	int fd;
+	if(set_offset(SYSFS_MPU_DIR "/in_anglvel_x_calibbias", offsets[0]) != 0
+		|| set_offset(SYSFS_MPU_DIR "/in_anglvel_y_calibbias", offsets[0] != 0)
+		|| set_offset(SYSFS_MPU_DIR "/in_anglvel_z_calibbias", offsets[0]) != 0){
+		return -1
+	}
+
+	// construct a new file path string and open for writing
+	strcpy(file_path, CONFIG_DIRECTORY);
+	strcat(file_path, GYRO_CAL_FILE);
+	cal = fopen(file_path, "w");
+	// if opening for writing failed, the directory may not exist yet
+	if (cal == 0) {
+		mkdir(CONFIG_DIRECTORY, 0777);
+		cal = fopen(file_path, "w");
+		if (cal == 0){
+			printf("could not open config directory\n");
+			printf(CONFIG_DIRECTORY);
+			printf("\n");
+			return -1;
+		}
+	}
+	
+	// write to the file, close, and exit
+	if(fprintf(cal,"%d\n%d\n%d\n", offsets[0],offsets[1],offsets[2])<0){
+		printf("Failed to write gyro offsets to file\n");
+		fclose(cal);
+		return -1;
+	}
+	fclose(cal);
+	return 0;	
+	
 }
  
+
+/*******************************************************************************
+* int write_mag_cal_to_disk(float offsets[3], float scale[3])
+*
+* Reads steady state gyro offsets from the disk and puts them in the IMU's 
+* gyro offset register. If no calibration file exists then make a new one.
+*******************************************************************************/
+int write_mag_cal_to_disk(float offsets[3], float scale[3]){
+	FILE *cal;
+	char file_path[100];
+	int ret;
+	
+	if(set_offset(SYSFS_MPU_DIR "/in_mag_x_calibbias", offsets[0]) != 0
+		|| set_offset(SYSFS_MPU_DIR "/in_mag_y_calibbias", offsets[0] != 0)
+		|| set_offset(SYSFS_MPU_DIR "/in_mag_z_calibbias", offsets[0]) != 0){
+		return -1
+	}
+
+	// construct a new file path string and open for writing
+	strcpy(file_path, CONFIG_DIRECTORY);
+	strcat(file_path, MAG_CAL_FILE);
+	cal = fopen(file_path, "w");
+	// if opening for writing failed, the directory may not exist yet
+	if (cal == 0) {
+		mkdir(CONFIG_DIRECTORY, 0777);
+		cal = fopen(file_path, "w");
+		if (cal == 0){
+			printf("could not open config directory\n");
+			printf(CONFIG_DIRECTORY);
+			printf("\n");
+			return -1;
+		}
+	}
+	
+	// write to the file, close, and exit
+	ret = fprintf(cal,"%f\n%f\n%f\n%f\n%f\n%f\n", 	offsets[0],\
+													offsets[1],\
+													offsets[2],\
+													scale[0],\
+													scale[1],\
+													scale[2]);
+	if(ret<0){
+		printf("Failed to write mag calibration to file\n");
+		fclose(cal);
+		return -1;
+	}
+	fclose(cal);
+	return 0;	
+	
+}
+
 /*******************************************************************************
 * int reset_mpu9250()
 *
@@ -323,148 +495,8 @@ int reset_mpu9250(){
 int initialize_magnetometer(){
 	uint8_t raw[3];  // calibration data stored here
 	
-	i2c_set_device_address(IMU_BUS, IMU_ADDR);
-	// Enable i2c bypass to allow talking to magnetometer
-	if(mpu_set_bypass(1)){
-		printf("failed to set mpu9250 into bypass i2c mode\n");
-		return -1;
-	}
-		
-	// magnetometer is actually a separate device with its
-	// own address inside the mpu9250
-	i2c_set_device_address(IMU_BUS, AK8963_ADDR);
-	
-	// Power down magnetometer  
-	i2c_write_byte(IMU_BUS, AK8963_CNTL, MAG_POWER_DN); 
-	usleep(1000);
-	
-	// Enter Fuse ROM access mode
-	i2c_write_byte(IMU_BUS, AK8963_CNTL, MAG_FUSE_ROM); 
-	usleep(1000);
-	
-	// Read the xyz sensitivity adjustment values
-	if(i2c_read_bytes(IMU_BUS, AK8963_ASAX, 3, &raw[0])<0){
-		printf("failed to read magnetometer adjustment regs\n");
-		i2c_set_device_address(IMU_BUS, IMU_ADDR);
-		mpu_set_bypass(0);
-		return -1;
-	}
-
-	// Return sensitivity adjustment values
-	mag_factory_adjust[0]=(float)(raw[0]-128)/256.0f + 1.0f;   
-	mag_factory_adjust[1]=(float)(raw[1]-128)/256.0f + 1.0f;  
-	mag_factory_adjust[2]=(float)(raw[2]-128)/256.0f + 1.0f; 
-	
-	// Power down magnetometer again
-	i2c_write_byte(IMU_BUS, AK8963_CNTL, MAG_POWER_DN); 
-	usleep(100);
-	
-	// Configure the magnetometer for 16 bit resolution 
-	// and continuous sampling mode 2 (100hz)
-	uint8_t c = MSCALE_16|MAG_CONT_MES_2;
-	i2c_write_byte(IMU_BUS, AK8963_CNTL, c);
-	usleep(100);
-	
-	// go back to configuring the IMU, leave bypass on
-	i2c_set_device_address(IMU_BUS,IMU_ADDR);
-	
 	return 0;
 }
-
-/*******************************************************************************
-* int power_down_magnetometer()
-*
-* Make sure the magnetometer is off.
-*******************************************************************************/
-int power_down_magnetometer(){
-	
-	i2c_set_device_address(IMU_BUS, IMU_ADDR);
-	// Enable i2c bypass to allow talking to magnetometer
-	if(mpu_set_bypass(1)){
-		printf("failed to set mpu9250 into bypass i2c mode\n");
-		return -1;
-	}
-	
-	// magnetometer is actually a separate device with its
-	// own address inside the mpu9250
-	i2c_set_device_address(IMU_BUS, AK8963_ADDR);
-	
-	// Power down magnetometer  
-	if(i2c_write_byte(IMU_BUS, AK8963_CNTL, MAG_POWER_DN)<0){
-		printf("failed to write to magnetometer\n");
-		return -1;
-	}
-	
-	i2c_set_device_address(IMU_BUS, IMU_ADDR);
-	// Enable i2c bypass to allow talking to magnetometer
-	if(mpu_set_bypass(0)){
-		printf("failed to set mpu9250 into bypass i2c mode\n");
-		return -1;
-	}
-	return 0;
-}
-
-/*******************************************************************************
-*	Power down the IMU
-*******************************************************************************/
-int power_off_imu(){
-	
-	shutdown_interrupt_thread = 1;
-	// set the device address
-	i2c_set_device_address(IMU_BUS, IMU_ADDR);
-	
-	// write the reset bit
-	if(i2c_write_byte(IMU_BUS, PWR_MGMT_1, H_RESET)){
-		printf("I2C write to MPU9250 Failed\n");
-		return -1;
-	}
-	
-	// write the sleep bit
-	if(i2c_write_byte(IMU_BUS, PWR_MGMT_1, MPU_SLEEP)){
-		printf("I2C write to MPU9250 Failed\n");
-		return -1;
-	}
-	
-	// wait for the interrupt thread to exit
-	//allow up to 1 second for thread cleanup
-	struct timespec thread_timeout;
-	clock_gettime(CLOCK_REALTIME, &thread_timeout);
-	thread_timeout.tv_sec += 1;
-	int thread_err = 0;
-	thread_err = pthread_timedjoin_np(imu_interrupt_thread, NULL, \
-															&thread_timeout);
-	if(thread_err == ETIMEDOUT){
-		printf("WARNING: imu_interrupt_thread exit timeout\n");
-	}
-	return 0;
-}
-
-
-
-
-/*******************************************************************************
-*	Set up the IMU for DMP accelerated filtering and interrupts
-*******************************************************************************/
-int initialize_imu_dmp(imu_data_t *data, imu_config_t conf){
-	uint8_t c;
-	
-	// range check
-	if(conf.dmp_sample_rate>DMP_MAX_RATE || conf.dmp_sample_rate<DMP_MIN_RATE){
-		printf("ERROR:dmp_sample_rate must be between %d & %d\n", \
-												DMP_MIN_RATE, DMP_MAX_RATE);
-		return -1;
-	}
-	
-	// make sure the sample rate is a divisor so we can find a neat rate divider
-	if(DMP_MAX_RATE%conf.dmp_sample_rate != 0){
-		printf("DMP sample rate must be a divisor of 200\n");
-		printf("acceptable values: 200,100,50,40,25,20,10,8,5,4 (HZ)\n");
-		return -1;
-	}
-	return 0;
-}
-
-
 
 
 /*******************************************************************************
@@ -482,7 +514,6 @@ int dmp_load_motion_driver_firmware(){
     /* Must divide evenly into st.hw->bank_size to avoid bank crossings. */
 
     unsigned char cur[DMP_LOAD_CHUNK], tmp[2];
-	
     return 0;
 }
 
@@ -499,8 +530,6 @@ int dmp_load_motion_driver_firmware(){
 
 
 int dmp_set_fifo_rate(unsigned short rate){
-    const unsigned char regs_end[12] = {DINAFE, DINAF2, DINAAB,
-        0xc4, DINAAA, DINAF1, DINADF, DINADF, 0xBB, 0xAF, DINADF, DINADF};
     unsigned short div;
     unsigned char tmp[8];
 
@@ -510,7 +539,6 @@ int dmp_set_fifo_rate(unsigned short rate){
 	
 	// set the samplerate divider
     div = 1000 / rate - 1;
-
     return 0;
 }
 
@@ -537,23 +565,6 @@ int dmp_enable_feature(unsigned short mask){
     return 0;
 }
 
-/*******************************************************************************
-* int dmp_enable_gyro_cal(unsigned char enable)
-*
-* Taken straight from the Invensense DMP code. This enabled the automatic gyro
-* calibration feature in the DMP. This this feature is fine for cell phones
-* but annoying in control systems we do not use it here and instead ask users
-* to run our own gyro_calibration routine.
-*******************************************************************************/
-int dmp_enable_gyro_cal(unsigned char enable){
-    if (enable) {
-        unsigned char regs[9] = {0xb8, 0xaa, 0xb3, 0x8d, 0xb4, 0x98, 0x0d, 0x35, 0x5d};
-        return mpu_write_mem(CFG_MOTION_BIAS, 9, regs);
-    } else {
-        unsigned char regs[9] = {0xb8, 0xaa, 0xaa, 0xaa, 0xb0, 0x88, 0xc3, 0xc5, 0xc7};
-        return mpu_write_mem(CFG_MOTION_BIAS, 9, regs);
-    }
-}
 
 /*******************************************************************************
 * int dmp_enable_6x_lp_quat(unsigned char enable)
@@ -600,47 +611,6 @@ int dmp_enable_lp_quat(unsigned char enable){
 	return 0;
 }
 
-/*******************************************************************************
-* int mpu_reset_fifo()
-*
-* This is mostly from the Invensense open source codebase but modified to also
-* allow magnetometer data to come in through the FIFO. This just turns off the
-* interrupt, resets fifo and DMP, then starts them again. Used once while 
-* initializing (probably no necessary) then again if the fifo gets too full.
-*******************************************************************************/
-int mpu_reset_fifo(void){
-    uint8_t data;
-
-    data = 0;
-    if (i2c_write_byte(IMU_BUS, INT_ENABLE, data))
-        return -1;
-    if (i2c_write_byte(IMU_BUS, FIFO_EN, data))
-        return -1;
-    // if (i2c_write_byte(IMU_BUS, USER_CTRL, data))
-        // return -1;
-
-	data = BIT_FIFO_RST | BIT_DMP_RST;
-	if (i2c_write_byte(IMU_BUS, USER_CTRL, data))
-		return -1;
-	usleep(2500);
-	data = BIT_DMP_EN | BIT_FIFO_EN;
-	if (config.enable_magnetometer)
-		data |= I2C_MST_EN;
-	if (i2c_write_byte(IMU_BUS, USER_CTRL, data))
-		return -1;
-	
-	if(dmp_en){
-		i2c_write_byte(IMU_BUS, INT_ENABLE, BIT_DMP_INT_EN);
-	}
-	//i2c_write_byte(IMU_BUS, INT_ENABLE, 0);
-	
-	data = 0;
-	if(config.enable_magnetometer) data |= FIFO_SLV0_EN;
-	if (i2c_write_byte(IMU_BUS, FIFO_EN, data))
-		return -1;
-  
-    return 0;
-}
 
 /*******************************************************************************
 * int dmp_set_interrupt_mode(unsigned char mode)
@@ -650,21 +620,7 @@ int mpu_reset_fifo(void){
 * only ever configure for continuous sampling.
 *******************************************************************************/
 int dmp_set_interrupt_mode(unsigned char mode){
-    const unsigned char regs_continuous[11] =
-        {0xd8, 0xb1, 0xb9, 0xf3, 0x8b, 0xa3, 0x91, 0xb6, 0x09, 0xb4, 0xd9};
-    const unsigned char regs_gesture[11] =
-        {0xda, 0xb1, 0xb9, 0xf3, 0x8b, 0xa3, 0x91, 0xb6, 0xda, 0xb4, 0xda};
-
-    switch (mode) {
-    case DMP_INT_CONTINUOUS:
-        return mpu_write_mem(CFG_FIFO_ON_EVENT, 11,
-            (unsigned char*)regs_continuous);
-    case DMP_INT_GESTURE:
-        return mpu_write_mem(CFG_FIFO_ON_EVENT, 11,
-            (unsigned char*)regs_gesture);
-    default:
-        return -1;
-    }
+	return 0;
 }
 
 /*******************************************************************************
@@ -674,28 +630,6 @@ int dmp_set_interrupt_mode(unsigned char mode){
 * not necessary but remains here anyway.
 *******************************************************************************/
 int set_int_enable(unsigned char enable){
-    unsigned char tmp;
-
-    if (dmp_en) {
-		#ifdef DEBUG
-		printf("setting dmp-driven interrupt to %d\n", enable);
-		#endif
-        if (enable) tmp = BIT_DMP_INT_EN;
-        else tmp = 0x00;
-		
-        if (i2c_write_byte(IMU_BUS, INT_ENABLE, tmp)) return -1;
-		// disable all other FIFO features leaving just DMP
-		if (i2c_write_byte(IMU_BUS, FIFO_EN, 0)) return -1;
-    } 
-	else {
-		#ifdef DEBUG
-		printf("setting data-ready interrupt to %d\n", enable);
-		#endif
-        if (enable) tmp = BIT_DATA_RDY_EN;
-        else tmp = 0x00;
-		
-        if (i2c_write_byte(IMU_BUS, INT_ENABLE, tmp)) return -1;
-    }
     return 0;
 }
 
@@ -710,13 +644,6 @@ int mpu_set_sample_rate(int rate){
 	}
 	 /* Keep constant sample rate, FIFO rate controlled by DMP. */
 	uint8_t div = (1000/rate) - 1;
-	#ifdef DEBUG
-	printf("setting divider to %d\n", div);
-	#endif
-	if(i2c_write_byte(IMU_BUS, SMPLRT_DIV, div)){
-		printf("I2C bus write error\n");
-		return -1;
-	}  
 	return 0;
 }
 
@@ -729,27 +656,6 @@ int mpu_set_sample_rate(int rate){
 *******************************************************************************/
 int mpu_set_dmp_state(unsigned char enable){
 
-    if (enable) {
-        /* Disable data ready interrupt. */
-        set_int_enable(0);
-        /* Disable bypass mode. */
-        mpu_set_bypass(0);
-		if(mpu_set_sample_rate(config.dmp_sample_rate)){
-			printf("ERROR in mpu_set_dmp_date can't change sample rate\n");
-			return -1;
-		}
-        /* Remove FIFO elements. */
-        i2c_write_byte(IMU_BUS, FIFO_EN , 0);
-        /* Enable DMP interrupt. */
-        set_int_enable(1);
-        mpu_reset_fifo();
-    } else {
-        /* Disable DMP interrupt. */
-        set_int_enable(0);
-        /* Restore FIFO settings. */
-        i2c_write_byte(IMU_BUS, FIFO_EN , 0);
-        mpu_reset_fifo();
-    }
     return 0;
 }
 
@@ -765,234 +671,6 @@ int mpu_set_dmp_state(unsigned char enable){
 * errors are detected then this function tries some i2c transfers a second time.
 *******************************************************************************/
 int read_dmp_fifo(){
-    unsigned char raw[MAX_FIFO_BUFFER];
-	long quat_q14[4], quat[4], quat_mag_sq;\
-	int16_t mag_adc[3];
-    uint16_t fifo_count;
-	int ret, is_new_mag_data;
-	int i = 0; // position in the buffer
-	static int first_run = 1; // set to 0 after first call
-	float factory_cal_data[3]; // just temp holder for mag data
-    if (!dmp_en){
-		printf("only use mpu_read_fifo in dmp mode\n");
-        return -1;
-	}
-	
-	// if the fifo packet_len variable not set up yet, this function must
-	// have been called prematurely
-	if(packet_len!=FIFO_LEN_NO_MAG && packet_len!=FIFO_LEN_MAG){
-		printf("ERROR: packet_len is set incorrectly for read_dmp_fifo\n");
-		return -1;
-	}
-	
-	// make sure the i2c address is set correctly. 
-	// this shouldn't take any time at all if already set
-	i2c_set_device_address(IMU_BUS, IMU_ADDR);
-	
-	// check fifo count register to make sure new data is there
-    if (i2c_read_word(IMU_BUS, FIFO_COUNTH, &fifo_count)<0){
-		if(config.show_warnings){
-			printf("fifo_count i2c error: %s\n",strerror(errno));
-		}
-		return -1;
-	}	
-	#ifdef DEBUG
-	printf("fifo_count: %d\n", fifo_count);
-	#endif
-	
-	// if more than 2 packets are there, something really bad happened
-	// reset the fifo
-	if (fifo_count>2*packet_len){
-		if(config.show_warnings){
-			printf("mpu9250 wrong fifo count: %d\n", fifo_count);
-			printf("resetting fifo\n");
-		}
-		mpu_reset_fifo();
-        return -1;
-	}
-	
-	// if one or two complete packets are not available, wait and try again
-	if(fifo_count!=packet_len && fifo_count<2*packet_len){
-		// printf("mpu9250 false interrupt, %d bytes available\n", fifo_count);
-		// printf("resetting FIFO\n");
-		// mpu_reset_fifo();
-		// return -1;
-				
-		usleep(2500);
-		if (i2c_read_word(IMU_BUS, FIFO_COUNTH, &fifo_count)<0){
-			if(config.show_warnings){
-				printf("fifo_count i2c error: %s\n",strerror(errno));
-			}
-			return -1;
-		}
-		
-		// still not enough bytes, must be bad read. 
-		if(fifo_count!=packet_len && fifo_count!=2*packet_len){
-			if(config.show_warnings && first_run!=1){
-				printf("%d bytes available, resetting FIFO: \n",fifo_count);
-				mpu_reset_fifo();
-			}
-			return -1;
-		}
-	}
-	
-	// if exactly 2 packets are there we just missed one (whoops)
-	// read both in and set the offset i to one packet length
-	// the last packet data will be read normally
-	if (fifo_count == 2*packet_len){
-		if(config.show_warnings){
-			printf("warning: mpu9250 fifo contains two packets\n");
-		}
-		i = packet_len;
-	}
-	// exactly one packet available, set offset to 0
-	else if (fifo_count==FIFO_LEN_NO_MAG || packet_len==FIFO_LEN_MAG){
-		i = 0;
-	}
-	// we should never get to this 'else' due to above logic but just in case
-	// we should exit now if a weird packet is received.
-	else{
-		if(config.show_warnings){
-			printf("mpu9250 false interrupt, %d bytes available\n",fifo_count);
-		}
-		return -1;
-	}
-	
-
-	// read it in!
-    ret = i2c_read_bytes(IMU_BUS, FIFO_R_W, fifo_count, &raw[0]);
-	if(ret<0){
-		// if i2c_read returned -1 there was an error, try again
-		ret = i2c_read_bytes(IMU_BUS, FIFO_R_W, fifo_count, &raw[0]);
-	}
-	if(ret!=fifo_count){
-		if(config.show_warnings){
-			printf("ERROR: failed to read fifo buffer register\n");
-			printf("read %d bytes, expected %d\n", ret, packet_len);
-		}
-        return -1;
-	}
-	
-	// if there was magnetometer data try to read it
-	is_new_mag_data = 0;
-	if(packet_len==FIFO_LEN_MAG){
-		// check if the readings saturated such as because
-		// of a local field source, discard data if so
-		if(raw[i+6]&MAGNETOMETER_SATURATION){
-			printf("WARNING: magnetometer saturated\n");
-		}
-		else{
-			// Turn the MSB and LSB into a signed 16-bit value
-			// Data stored as little Endian
-			mag_adc[0] = (int16_t)(((int16_t)raw[i+1]<<8) | raw[i+0]);  
-			mag_adc[1] = (int16_t)(((int16_t)raw[i+3]<<8) | raw[i+2]);  
-			mag_adc[2] = (int16_t)(((int16_t)raw[i+5]<<8) | raw[i+4]); 
-			
-			// if the data is non-zero, save it
-			// multiply by the sensitivity adjustment and convert to units of 
-			// uT micro Teslas. Also correct the coordinate system as someone 
-			// in invensense thought it would be bright idea to have the 
-			// magnetometer coordiate system aligned differently than the 
-			// accelerometer and gyro.... -__-
-			if(mag_adc[0]!=0 || mag_adc[1]!=0 || mag_adc[2]!=0){
-		// multiply by the sensitivity adjustment and convert to units of uT
-		// Also correct the coordinate system as someone in invensense 
-		// thought it would be a bright idea to have the magnetometer coordiate
-		// system aligned differently than the accelerometer and gyro.... -__-
-		factory_cal_data[0] = mag_adc[1]*mag_factory_adjust[1] * MAG_RAW_TO_uT;
-		factory_cal_data[1] = mag_adc[0]*mag_factory_adjust[0] * MAG_RAW_TO_uT;
-		factory_cal_data[2] = -mag_adc[2]*mag_factory_adjust[2] * MAG_RAW_TO_uT;
-	
-		// now apply out own calibration, but first make sure we don't 
-		// accidentally multiply by zero in case of uninitialized scale factors
-		if(mag_scales[0]==0.0) mag_scales[0]=1.0;
-		if(mag_scales[1]==0.0) mag_scales[1]=1.0;
-		if(mag_scales[2]==0.0) mag_scales[2]=1.0;
-		data_ptr->mag[0] = (factory_cal_data[0]-mag_offsets[0])*mag_scales[0];
-		data_ptr->mag[1] = (factory_cal_data[1]-mag_offsets[1])*mag_scales[1];
-		data_ptr->mag[2] = (factory_cal_data[2]-mag_offsets[2])*mag_scales[2];
-		is_new_mag_data = 1;
-			}
-		}
-		i+=7; // increase our position by 7 bytes
-	}
-	
-	// parse the quaternion data from the buffer
-	quat[0] = ((long)raw[i+0] << 24) | ((long)raw[i+1] << 16) |
-		((long)raw[i+2] << 8) | raw[i+3];
-	quat[1] = ((long)raw[i+4] << 24) | ((long)raw[i+5] << 16) |
-		((long)raw[i+6] << 8) | raw[i+7];
-	quat[2] = ((long)raw[i+8] << 24) | ((long)raw[i+9] << 16) |
-		((long)raw[i+10] << 8) | raw[i+11];
-	quat[3] = ((long)raw[i+12] << 24) | ((long)raw[i+13] << 16) |
-		((long)raw[i+14] << 8) | raw[i+15];
-
-	/* We can detect a corrupted FIFO by monitoring the quaternion data and
-	 * ensuring that the magnitude is always normalized to one. This
-	 * shouldn't happen in normal operation, but if an I2C error occurs,
-	 * the FIFO reads might become misaligned.
-	 *
-	 * Let's start by scaling down the quaternion data to avoid long long
-	 * math.
-	 */
-	quat_q14[0] = quat[0] >> 16;
-	quat_q14[1] = quat[1] >> 16;
-	quat_q14[2] = quat[2] >> 16;
-	quat_q14[3] = quat[3] >> 16;
-	quat_mag_sq = quat_q14[0] * quat_q14[0] + quat_q14[1] * quat_q14[1] +
-		quat_q14[2] * quat_q14[2] + quat_q14[3] * quat_q14[3];
-	if ((quat_mag_sq < QUAT_MAG_SQ_MIN) ||(quat_mag_sq > QUAT_MAG_SQ_MAX)){
-		if(config.show_warnings){
-			printf("ERROR:Quaternion is outside of the acceptable threshold\n");
-		}
-		return -1;
-	}
-	// load in the quaternion to the data struct if it was good
-	data_ptr->dmp_quat[QUAT_W] = (float)quat[QUAT_W];
-	data_ptr->dmp_quat[QUAT_X] = (float)quat[QUAT_X];
-	data_ptr->dmp_quat[QUAT_Y] = (float)quat[QUAT_Y];
-	data_ptr->dmp_quat[QUAT_Z] = (float)quat[QUAT_Z];
-	// fill in euler angles to the data struct
-	normalizeQuaternion(data_ptr->dmp_quat);
-	quaternionToTaitBryan(data_ptr->dmp_quat, data_ptr->dmp_TaitBryan);
-	
-	i+=16; // increase offset by 16 which was the quaternion size
-	
-	
-	// Read Accel values and load into imu_data struct
-	// Turn the MSB and LSB into a signed 16-bit value
-	data_ptr->raw_accel[0] = (int16_t)(((uint16_t)raw[i+0]<<8)|raw[i+1]);
-	data_ptr->raw_accel[1] = (int16_t)(((uint16_t)raw[i+2]<<8)|raw[i+3]);
-	data_ptr->raw_accel[2] = (int16_t)(((uint16_t)raw[i+4]<<8)|raw[i+5]);
-	
-	// Fill in real unit values
-	data_ptr->accel[0] = data_ptr->raw_accel[0] * data_ptr->accel_to_ms2;
-	data_ptr->accel[1] = data_ptr->raw_accel[1] * data_ptr->accel_to_ms2;
-	data_ptr->accel[2] = data_ptr->raw_accel[2] * data_ptr->accel_to_ms2;
-	i+=6;
-	
-	// Read gyro values and load into imu_data struct
-	// Turn the MSB and LSB into a signed 16-bit value
-	data_ptr->raw_gyro[0] = (int16_t)(((int16_t)raw[0+i]<<8)|raw[1+i]);
-	data_ptr->raw_gyro[1] = (int16_t)(((int16_t)raw[2+i]<<8)|raw[3+i]);
-	data_ptr->raw_gyro[2] = (int16_t)(((int16_t)raw[4+i]<<8)|raw[5+i]);
-	// Fill in real unit values
-	data_ptr->gyro[0] = data_ptr->raw_gyro[0] * data_ptr->gyro_to_degs;
-	data_ptr->gyro[1] = data_ptr->raw_gyro[1] * data_ptr->gyro_to_degs;
-	data_ptr->gyro[2] = data_ptr->raw_gyro[2] * data_ptr->gyro_to_degs;
-	#ifdef DEBUG
-	printf("finished reading gyro data\n");
-	#endif
-	
-	// run data_fusion to filter yaw with compass if new mag data came in
-	if(is_new_mag_data){
-		#ifdef DEBUG
-		printf("running data_fusion\n");
-		#endif
-		data_fusion();
-	}
-
-	first_run = 0;
     return 0;
 }
 
@@ -1138,43 +816,6 @@ int data_fusion(){
 	return 0;
 }
 
-/*******************************************************************************
-* int write_gyro_offsets_to_disk(int16_t offsets[3])
-*
-* Reads steady state gyro offsets from the disk and puts them in the IMU's 
-* gyro offset register. If no calibration file exists then make a new one.
-*******************************************************************************/
-int write_gyro_offets_to_disk(int16_t offsets[3]){
-	FILE *cal;
-	char file_path[100];
-
-	// construct a new file path string and open for writing
-	strcpy(file_path, CONFIG_DIRECTORY);
-	strcat(file_path, GYRO_CAL_FILE);
-	cal = fopen(file_path, "w");
-	// if opening for writing failed, the directory may not exist yet
-	if (cal == 0) {
-		mkdir(CONFIG_DIRECTORY, 0777);
-		cal = fopen(file_path, "w");
-		if (cal == 0){
-			printf("could not open config directory\n");
-			printf(CONFIG_DIRECTORY);
-			printf("\n");
-			return -1;
-		}
-	}
-	
-	// write to the file, close, and exit
-	if(fprintf(cal,"%d\n%d\n%d\n", offsets[0],offsets[1],offsets[2])<0){
-		printf("Failed to write gyro offsets to file\n");
-		fclose(cal);
-		return -1;
-	}
-	fclose(cal);
-	return 0;	
-	
-}
-
 
 /*******************************************************************************
 * unsigned short inv_row_2_scale(signed char row[])
@@ -1288,237 +929,3 @@ int was_last_read_successful(){
 uint64_t micros_since_last_interrupt(){
 	return micros_since_epoch() - last_interrupt_timestamp_micros;
 }
-
-/*******************************************************************************
-* int write_mag_cal_to_disk(float offsets[3], float scale[3])
-*
-* Reads steady state gyro offsets from the disk and puts them in the IMU's 
-* gyro offset register. If no calibration file exists then make a new one.
-*******************************************************************************/
-int write_mag_cal_to_disk(float offsets[3], float scale[3]){
-	FILE *cal;
-	char file_path[100];
-	int ret;
-	
-	// construct a new file path string and open for writing
-	strcpy(file_path, CONFIG_DIRECTORY);
-	strcat(file_path, MAG_CAL_FILE);
-	cal = fopen(file_path, "w");
-	// if opening for writing failed, the directory may not exist yet
-	if (cal == 0) {
-		mkdir(CONFIG_DIRECTORY, 0777);
-		cal = fopen(file_path, "w");
-		if (cal == 0){
-			printf("could not open config directory\n");
-			printf(CONFIG_DIRECTORY);
-			printf("\n");
-			return -1;
-		}
-	}
-	
-	// write to the file, close, and exit
-	ret = fprintf(cal,"%f\n%f\n%f\n%f\n%f\n%f\n", 	offsets[0],\
-													offsets[1],\
-													offsets[2],\
-													scale[0],\
-													scale[1],\
-													scale[2]);
-	if(ret<0){
-		printf("Failed to write mag calibration to file\n");
-		fclose(cal);
-		return -1;
-	}
-	fclose(cal);
-	return 0;	
-	
-}
-
-/*******************************************************************************
-* int load_mag_calibration()
-*
-* Loads steady state magnetometer offsets and scale from the disk into global
-* variables for correction later by read_magnetometer and FIFO read functions
-*******************************************************************************/
-int load_mag_calibration(){
-	FILE *cal;
-	char file_path[100];
-	float x,y,z,sx,sy,sz;
-	
-	// construct a new file path string and open for reading
-	strcpy (file_path, CONFIG_DIRECTORY);
-	strcat (file_path, MAG_CAL_FILE);
-	cal = fopen(file_path, "r");
-	
-	if (cal == 0) {
-		// calibration file doesn't exist yet
-		printf("WARNING: no magnetometer calibration data found\n");
-		printf("Please run calibrate_mag\n\n");
-		return -1;
-	}
-	// read in data
-	fscanf(cal,"%f\n%f\n%f\n%f\n%f\n%f\n", &x,&y,&z,&sx,&sy,&sz);
-		
-	#ifdef DEBUG
-	printf("magcal: %f %f %f %f %f %f\n", x,y,z,sx,sy,sz);
-	#endif
-	
-	// write to global variables fo use by read_mag_data
-	mag_offsets[0]=x;
-	mag_offsets[1]=y;
-	mag_offsets[2]=z;
-	mag_scales[0]=sx;
-	mag_scales[1]=sy;
-	mag_scales[2]=sz;
-
-	fclose(cal);
-	return 0;	
-}
-
-/*******************************************************************************
-* int calibrate_mag_routine()
-*
-* Initializes the IMU and samples the magnetometer untill sufficient samples
-* have been collected from each octant. From there, fit an ellipse to the data 
-* and save the correct offsets and scales to the disk which will later be
-* applied to correct the uncallibrated magnetometer data to map calibrationed
-* field vectors to a sphere.
-*******************************************************************************/
-int calibrate_mag_routine(){
-	const int samples = 200;
-	const int sample_rate_hz = 20;
-	int i;
-	uint8_t c;
-	float new_scale[3];
-	imu_data_t imu_data; // to collect magnetometer data
-	
-	// make sure the bus is not currently in use by another thread
-	// do not proceed to prevent interfering with that process
-	if(i2c_get_in_use_state(IMU_BUS)){
-		printf("i2c bus claimed by another process\n");
-		printf("aborting gyro calibration()\n");
-		return -1;
-	}
-	
-	// if it is not claimed, start the i2c bus
-	if(i2c_init(IMU_BUS, IMU_ADDR)){
-		printf("initialize_imu_dmp failed at i2c_init\n");
-		return -1;
-	}
-	
-	// claiming the bus does no guarantee other code will not interfere 
-	// with this process, but best to claim it so other code can check
-	// like we did above
-	i2c_claim_bus(IMU_BUS);
-	
-	// reset device, reset all registers
-	if(reset_mpu9250()<0){
-		printf("ERROR: failed to reset MPU9250\n");
-		return -1;
-	}
-	//check the who am i register to make sure the chip is alive
-	if(i2c_read_byte(IMU_BUS, WHO_AM_I_MPU9250, &c)<0){
-		printf("Reading WHO_AM_I_MPU9250 register failed\n");
-		i2c_release_bus(IMU_BUS);
-		return -1;
-	}
-	if(c!=0x71){
-		printf("mpu9250 WHO AM I register should return 0x71\n");
-		printf("WHO AM I returned: 0x%x\n", c);
-		i2c_release_bus(IMU_BUS);
-		return -1;
-	}
-	if(initialize_magnetometer()){
-		printf("ERROR: failed to initialize_magnetometer\n");
-		i2c_release_bus(IMU_BUS);
-		return -1;
-	}
-	
-	// set local calibration to initial values and prepare variables
-	mag_offsets[0] = 0.0;
-	mag_offsets[1] = 0.0;
-	mag_offsets[2] = 0.0;
-	mag_scales[0]  = 1.0;
-	mag_scales[1]  = 1.0;
-	mag_scales[2]  = 1.0;
-	matrix_t A = createMatrix(samples,3);
-	i = 0;
-		
-	// sample data
-	while(i<samples && get_state()!=EXITING){
-		if(read_mag_data(&imu_data)<0){
-			printf("ERROR: failed to read magnetometer\n");
-			break;
-		}
-		// make sure the data is non-zero
-		if(imu_data.mag[0]==0 && imu_data.mag[1]==0 && imu_data.mag[2]==0){
-			printf("ERROR: retreived all zeros from magnetometer\n");
-			break;	
-		}
-		// save data to matrix for ellipse fitting
-		A.data[i][0] = imu_data.mag[0];
-		A.data[i][1] = imu_data.mag[1];
-		A.data[i][2] = imu_data.mag[2];
-		i++;
-		
-		// print "keep going" every second
-		if(i%sample_rate_hz == 0){
-			printf("keep spinning\n");
-		}
-		
-		usleep(1000000/sample_rate_hz);
-	}
-		
-	// done with I2C for now
-	power_off_imu();
-	i2c_release_bus(IMU_BUS);
-	
-	// if data collection loop exited without getting enough data, warn the
-	// user and return -1, otherwise keep going normally
-	if(i<samples){
-		printf("exiting calibrate_mag_routine without saving new data\n");
-		return -1;
-	}
-	
-	// make empty vectors for ellipsoid fitting to populate
-	vector_t center,lengths;
- 
- 	if(fitEllipsoid(A,&center,&lengths)<0){
- 		printf("failed to fit ellipsoid to magnetometer data\n");
- 		destroyMatrix(&A);
- 		return -1;
- 	}
- 	destroyMatrix(&A); // empty memory, we are done with A
- 	
- 	// do some sanity checks to make sure data is reasonable
- 	if(fabs(center.data[0])>70 || fabs(center.data[1])>70 || \
- 											fabs(center.data[2])>70){
- 		printf("ERROR: center of fitted ellipsoid out of bounds\n");
- 		destroyVector(&center);
- 		destroyVector(&lengths);
- 		return -1;
- 	}
- 	if(lengths.data[0]>140 || lengths.data[0]<5 || \
- 	   lengths.data[1]>140 || lengths.data[1]<5 || \
- 	   lengths.data[2]>140 || lengths.data[2]<5){
- 		printf("ERROR: length of fitted ellipsoid out of bounds\n");
- 		destroyVector(&center);
- 		destroyVector(&lengths);
- 		return -1;
- 	}
- 	
-	// all seems well, calculate scaling factors to map ellipse legnths to
-	// a sphere of radius 70uT, this scale will later be multiplied by the
-	// factory corrected data
-	new_scale[0] = 70.0/lengths.data[0];
-	new_scale[1] = 70.0/lengths.data[1];
-	new_scale[2] = 70.0/lengths.data[2];
-	
-	// write to disk
-	if(write_mag_cal_to_disk(center.data,new_scale)<0){
-		return -1;
-	}
-	return 0;
-}
-
-
- 
