@@ -82,12 +82,3 @@ float get_dc_jack_voltage(){
 	if(v<0.3) v = 0.0;
 	return v;
 }
-
-int main(){
-
-	float val;
-	val = get_dc_jack_voltage();
-	printf("%f\n", val);
-	return 0;
-
-}
