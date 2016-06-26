@@ -6,7 +6,7 @@
 *******************************************************************************/
 
 #include <useful_includes.h>
-#include <bb_blue_api.h>
+#include <robotics_cape.h>
 
 // pause button pressed interrupt function
 int on_pause_pressed(){

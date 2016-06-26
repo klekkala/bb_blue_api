@@ -8,7 +8,7 @@
 * The test strings this programs transmits will then loopback to the RX channel.
 *******************************************************************************/
 
-#include <bb_blue_api.h>
+#include <robotics_cape.h>
 #include <useful_includes.h>
 
 #define BUF_SIZE 	32

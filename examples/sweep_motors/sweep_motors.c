@@ -31,7 +31,7 @@ either expressed or implied, of the FreeBSD Project.
 // Moves all 4 motors forward and back
 // James Strawson - 2013
 
-#include <bb_blue_api.h>
+#include <robotics_cape.h>
 
 #define SPEED 0.3 // choose from 0 to 1
 

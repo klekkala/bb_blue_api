@@ -8,7 +8,7 @@
 * filters to demonstrate how they sum to 1
 *******************************************************************************/
 
-#include <bb_blue_api.h>
+#include <robotics_cape.h>
 #include <useful_includes.h>
 
 #define SAMPLE_RATE 	50

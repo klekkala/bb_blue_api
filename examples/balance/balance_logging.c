@@ -32,7 +32,7 @@ either expressed or implied, of the FreeBSD Project.
 // logs to disk
 // see balance_logging.h for outside function declarations
 
-#include <bb_blue_api.h>
+#include <robotics_cape.h>
 #include "balance_logging.h"
 
 /************************************************************************

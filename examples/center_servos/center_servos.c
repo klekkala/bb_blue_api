@@ -39,7 +39,7 @@ either expressed or implied, of the FreeBSD Project.
 	on another channel for controlling high-performance brushless ESCs
 */
 
-#include <bb_blue_api.h>
+#include <robotics_cape.h>
 
 int main(int argc, char *argv[]){
     initialize_cape();

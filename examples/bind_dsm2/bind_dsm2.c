@@ -27,7 +27,7 @@
 *   9  	DSMx 2048/11ms: 
 *******************************************************************************/
 
-#include <bb_blue_api.h>
+#include <robotics_cape.h>
 
 // just run the bind function
 int main(){

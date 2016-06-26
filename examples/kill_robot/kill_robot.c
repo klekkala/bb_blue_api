@@ -8,7 +8,7 @@
 *******************************************************************************/ 
 
 #include <useful_includes.h>
-#include <bb_blue_api.h>
+#include <robotics_cape.h>
 
 int main(){
 	printf("\nAttempting to shut down existing project\n\n");

@@ -7,7 +7,7 @@
 * will be saved which is loaded automatically the next time the IMU is used.
 *******************************************************************************/
 
-#include <bb_blue_api.h>
+#include <robotics_cape.h>
 #include <useful_includes.h>
 
 int main(){
@@ -18,7 +18,7 @@ int main(){
 	printf("\n");
 	printf("This will sample the magnetometer for the next few seconds\n");
 	printf("Rotate the cape around in the air through as many orientations\n");
-	printf("as possible to collect sufficient data for callibration\n");
+	printf("as possible to collect sufficient data for calibration\n");
 	printf("Press ENTER to continue or anything else to quit\n");
 	if(continue_or_quit()<0){
 		cleanup_cape();

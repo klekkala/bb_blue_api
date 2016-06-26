@@ -6,7 +6,7 @@
 *******************************************************************************/
 
 #include <useful_includes.h>
-#include <bb_blue_api.h>
+#include <robotics_cape.h>
 #include <robotics_cape_defs.h>
 #include <simple_gpio/simple_gpio.h>
 #include <mmap/mmap_gpio_adc.h>

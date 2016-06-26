@@ -5,7 +5,7 @@
 // and prints any received packets to the console.
 // This this heavily-based on mavlink_udp.c from the mavlink website 
 
-#include <bb_blue_api.h>
+#include <robotics_cape.h>
 #define DEFAULT_MAV_ADDRESS "192.168.7.1"
 
 int sock;

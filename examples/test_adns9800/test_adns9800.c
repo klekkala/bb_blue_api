@@ -3,7 +3,7 @@
 // See adns9800.h for more information and resources
 // James Strawson 2014
   
-#include <bb_blue_api.h>
+#include <robotics_cape.h>
 #include "adns9800.h"
 
 int main(){ 

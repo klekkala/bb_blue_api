@@ -11,7 +11,7 @@
 *******************************************************************************/
 
 #include <useful_includes.h>
-#include <bb_blue_api.h>
+#include <robotics_cape.h>
 
 // possible modes, user selected with command line arguments
 typedef enum m_mode_t{

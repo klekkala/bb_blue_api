@@ -4,7 +4,7 @@
 * See README.TXT for details
 *******************************************************************************/
 
-#include <bb_blue_api.h>
+#include <robotics_cape.h>
 #include <useful_includes.h>
 
 typedef enum test_mode_t{

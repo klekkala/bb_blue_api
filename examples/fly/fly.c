@@ -35,7 +35,7 @@ either expressed or implied, of the FreeBSD Project.
 /********************************************
 * 			Includes & Constants			*
 *********************************************/
-#include <bb_blue_api.h>
+#include <robotics_cape.h>
 
 #define SAMPLE_RATE_HZ 		200		// Run the main control loop at this rate
 #define DT 				   .005		// timestep seconds MUST MATCH SAMPLE_RATE_HZ

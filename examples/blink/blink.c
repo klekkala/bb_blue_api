@@ -5,7 +5,7 @@
 *******************************************************************************/
 
 
-#include <bb_blue_api.h>
+#include <robotics_cape.h>
 #include <useful_includes.h>
 
 #define QUIT_TIMEOUT_US 1500000 // quit after 1.5 seconds holding pause button

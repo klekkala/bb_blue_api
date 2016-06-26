@@ -1,7 +1,7 @@
 // prints voltages read by all adc channels
 // James Strawson 2015
 
-#include <bb_blue_api.h>
+#include <robotics_cape.h>
 
 int main(){
 	int i;
