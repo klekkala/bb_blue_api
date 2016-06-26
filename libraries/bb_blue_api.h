@@ -484,6 +484,11 @@ int   calibrate_dsm2_routine();
 * is slower to read, it is disabled by default.
 *
 ******************************************************************************/
+#define DMP_SAMPLE_RATE 20
+#define MAG_RAW_TO_uT	(4912.0/32760.0)
+#define ROOM_TEMP_OFFSET		0x00
+#define TEMP_SENSITIVITY		333.87 // degC/LSB
+
 typedef enum accel_fsr_t {
   A_FSR_2G,
   A_FSR_4G,
@@ -543,7 +548,7 @@ typedef struct imu_config_t {
 	int dmp_sample_rate;
 	imu_orientation_t orientation; //orientation matrix
 	// higher mix_factor means less weight the compass has on fused_TaitBryan
-	int compass_mix_factor; // must be >0
+	int compass_time_constant; 	// time constant for filtering fused yaw
 	int dmp_interrupt_priority; // scheduler priority for handler
 	int show_warnings;	// set to 1 to enable showing of i2c_bus warnings
 
@@ -559,6 +564,7 @@ typedef struct imu_data_t {
 	// 16 bit raw adc readings from each sensor
 	int16_t raw_gyro[3];	
 	int16_t raw_accel[3];
+	int16_t raw_mag[3];
 	
 	// FSR-derived conversion ratios from raw to real units
 	float accel_to_ms2; // to m/s^2
@@ -596,6 +602,7 @@ int set_imu_interrupt_func(int (*func)(void));
 int stop_imu_interrupt_func();
 int was_last_read_successful();
 uint64_t micros_since_last_interrupt();
+
 
 /*******************************************************************************
 * BMP280 Barometer

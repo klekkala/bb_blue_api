@@ -7,7 +7,7 @@
 
 #include "bb_blue_api.h"
 #include "useful_includes.h"
-
+#include "sensor_config.h"
 // #define DEBUG
 #define WARNINGS
 
@@ -26,6 +26,10 @@
 #define QUAT_MAG_SQ_MIN         (QUAT_MAG_SQ_NORMALIZED - QUAT_ERROR_THRESH)
 #define QUAT_MAG_SQ_MAX         (QUAT_MAG_SQ_NORMALIZED + QUAT_ERROR_THRESH)
 
+
+int last_read_successful;
+int last_interrupt_timestamp_micros;
+
 /*******************************************************************************
 *	Local variables
 *******************************************************************************/
@@ -42,19 +46,13 @@ imu_data_t* data_ptr;
 /*******************************************************************************
 *	config functions for internal use only
 *******************************************************************************/
-int read_raw_data(directory);
 int reset_mpu9250();
 int initialize_magnetometer(imu_data_t* data);
 int power_down_magnetometer();
-int mpu_set_bypass(unsigned char bypass_on);
-int mpu_write_mem(unsigned short mem_addr, unsigned short length,\
-												unsigned char *data);
-int mpu_read_mem(unsigned short mem_addr, unsigned short length,\
-												unsigned char *data);
 int dmp_load_motion_driver_firmware();
 int dmp_set_orientation(unsigned short orient);
-unsigned short inv_orientation_matrix_to_scalar(const signed char *mtx);
-unsigned short inv_row_2_scale(const signed char *row);
+//unsigned short inv_orientation_matrix_to_scalar(const signed char *mtx);
+unsigned short inv_row_2_scale(signed char row[]);
 int dmp_enable_gyro_cal(unsigned char enable);
 int dmp_enable_lp_quat(unsigned char enable);
 int dmp_enable_6x_lp_quat(unsigned char enable);
@@ -110,32 +108,14 @@ int set_imu_config_to_defaults(imu_config_t *conf){
 *******************************************************************************/
 int initialize_imu(imu_data_t *data, imu_config_t conf){  
 	uint8_t c;
-	
-	// make sure the bus is not currently in use by another thread
-	// do not proceed to prevent interfering with that process
-	int fd;
-	char buf[MAX_BUF];
-	snprintf(buf, sizeof(buf), "/sys/class/gpio/gpio%i/direction", gpio);
-	fd = open(buf, O_WRONLY);
-	//printf("%d\n", gpio);
-	if (fd < 0) {
-		perror("gpio/direction");
-		return fd;
-	}
-
-	if (out_flag == OUTPUT_PIN)
-		write(fd, "out", 4);
-	else
-		write(fd, "in", 3);
-
-	close(fd);
 	return 0;
 }
 
 
-int read_raw_data(directory){
+int16_t read_raw_data(const char* directory){
 
-	int fd, val;
+	int fd;
+	int16_t val;
 	char buf[MAX_BUF];
 
 	snprintf(buf, sizeof(buf), directory);
@@ -148,7 +128,7 @@ int read_raw_data(directory){
 	}
 
 	// Turn the MSB and LSB into a signed 16-bit value
-	read(fd, &val, 4);
+	read(fd, &val, 2);
 	close(fd);
 
 	return val;
@@ -162,9 +142,9 @@ int read_raw_data(directory){
 int read_accel_data(imu_data_t *data){
 	// new register data stored here
 	
-	data->raw_accel[0] = read_raw_data(SYSFS_MPU_DIR "/in_accel_x_raw");
-	data->raw_accel[0] = read_raw_data(SYSFS_MPU_DIR "/in_accel_y_raw");
-	data->raw_accel[0] = read_raw_data(SYSFS_MPU_DIR "/in_accel_z_raw");
+	data->raw_accel[0] = read_raw_data(SYSFS_IMU_DIR "/in_accel_x_raw");
+	data->raw_accel[0] = read_raw_data(SYSFS_IMU_DIR "/in_accel_y_raw");
+	data->raw_accel[0] = read_raw_data(SYSFS_IMU_DIR "/in_accel_z_raw");
 
 	// Fill in real unit values
 	data->accel[0] = data->raw_accel[0] * data->accel_to_ms2;
@@ -183,9 +163,9 @@ int read_accel_data(imu_data_t *data){
 int read_gyro_data(imu_data_t *data){
 
 	// Turn the MSB and LSB into a signed 16-bit value
-	data->raw_gyro[0] = read_raw_data(SYSFS_MPU_DIR "/in_gyro_x_raw");
-	data->raw_gyro[1] = read_raw_data(SYSFS_MPU_DIR "/in_gyro_y_raw");
-	data->raw_gyro[2] = read_raw_data(SYSFS_MPU_DIR "/in_gyro_z_raw");
+	data->raw_gyro[0] = read_raw_data(SYSFS_IMU_DIR "/in_gyro_x_raw");
+	data->raw_gyro[1] = read_raw_data(SYSFS_IMU_DIR "/in_gyro_y_raw");
+	data->raw_gyro[2] = read_raw_data(SYSFS_IMU_DIR "/in_gyro_z_raw");
 
 
 	// Fill in real unit values
@@ -206,15 +186,15 @@ int read_gyro_data(imu_data_t *data){
 int read_mag_data(imu_data_t* data){
 
 	// Turn the MSB and LSB into a signed 16-bit value
-	data->raw_mag[0] = read_raw_data(SYSFS_MPU_DIR "/in_magn_x_raw");
-	data->raw_mag[0] = read_raw_data(SYSFS_MPU_DIR "/in_magn_y_raw");
-	data->raw_mag[0] = read_raw_data(SYSFS_MPU_DIR "/in_magn_z_raw");
+	data->raw_mag[0] = read_raw_data(SYSFS_IMU_DIR "/in_magn_x_raw");
+	data->raw_mag[1] = read_raw_data(SYSFS_IMU_DIR "/in_magn_y_raw");
+	data->raw_mag[2] = read_raw_data(SYSFS_IMU_DIR "/in_magn_z_raw");
 
 	// multiply by the sensitivity adjustment and convert to
 	// units of uT micro Teslas
-	data->mag[0] = adc[0] * mag_adjust[0] * MAG_RAW_TO_uT;
-	data->mag[1] = adc[1] * mag_adjust[1] * MAG_RAW_TO_uT;
-	data->mag[2] = adc[2] * mag_adjust[2] * MAG_RAW_TO_uT;
+	data->mag[0] = data->raw_mag[0] * MAG_RAW_TO_uT;
+	data->mag[1] = data->raw_mag[1] * MAG_RAW_TO_uT;
+	data->mag[2] = data->raw_mag[2] * MAG_RAW_TO_uT;
 	
 	return 0;
 }
@@ -225,22 +205,22 @@ int read_mag_data(imu_data_t* data){
 * reads the latest temperature of the imu. 
 *******************************************************************************/
 int read_imu_temp(imu_data_t* data){
-	int temp_val;
+	int16_t temp_val;
 	
 	int fd;
 	char buf[MAX_BUF];
 
-	snprintf(buf1, sizeof(buf), SYSFS_MPU_DIR "/in_temp_raw");
-	fd3 = open(buf3, O_RDONLY);
+	snprintf(buf, sizeof(buf), SYSFS_IMU_DIR "/in_temp_raw");
+	fd = open(buf, O_RDONLY);
 
-	if (fd1 < 0) {
+	if (fd < 0) {
 		perror("error openning in_temp_raw sysfs entries");
 		/*Still some changs to make in the error handling*/
 		return fd;
 	}
 
 	// Turn the MSB and LSB into a signed 16-bit value
-	read(fd1, &temp_val, 4);
+	read(fd, &temp_val, 2);
 	close(fd);
 
 	// convert to real units
@@ -251,56 +231,31 @@ int read_imu_temp(imu_data_t* data){
 
 
 
-int set_offset(****directory, int16_t offset){
+int set_offset(const char* directory, int16_t offset){
 
 	int fd;
-	char buf[MAX_BUF]
+	char buf[MAX_BUF];
 	snprintf(buf, sizeof(buf), directory);
 	fd = open(buf, O_WRONLY);
 
 	if (fd < 0) {
-		perror("unable to set offset in **");
+		perror("unable to set offset");
 		return fd;
 	}
 
-	write(fd1, offset, 4);
+	write(fd, offset, 2);
 	close(fd);
 
 	return 0;
 }
 
 
-/*******************************************************************************
-* int read_imu_temp(imu_data_t* data)
-*
-* reads the latest temperature of the imu. 
-*******************************************************************************/
-int set_offset(****directory){
-	int temp_val;
-	
-	int fd;
-	char buf1[MAX_BUF];
 
-	snprintf(buf, sizeof(buf), SYSFS_MPU_DIR "/in_temp_raw");
-	fd3 = open(buf3, O_RDONLY);
+int write_to_disk(const char* CAL_FILE, int16_t matrix[3][3]){
 
-	if (fd1 < 0) {
-		perror("error openning in_mag_raw sysfs entries");
-		/*Still some changs to make in the error handling*/
-		return fd;
-	}
+	FILE *cal;
+	char file_path[100];
 
-	// Turn the MSB and LSB into a signed 16-bit value
-	read(fd1, &temp_val, 20);
-	close(fd);
-
-	// convert to real units
-	data->temp = ((float)(temp_val)/TEMP_SENSITIVITY) + 21.0;
-	return 0;
-	
-}
-
-int write_to_disk(CAL_FILE, matrix){
 	// construct a new file path string and open for writing
 	strcpy(file_path, CONFIG_DIRECTORY);
 	strcat(file_path, CAL_FILE);
@@ -336,43 +291,21 @@ int write_to_disk(CAL_FILE, matrix){
 * Reads steady state accel offsets from the disk and puts them in the IMU's 
 * accel offset register. If no calibration file exists then make a new one.
 *******************************************************************************/
-int write_accel_offets_to_disk(int16_t offsets[3]){
-	FILE *cal;
-	char file_path[100];
+int accel_offets_scale_matrix(int16_t offsets[3]){
+
 	int16_t matrix[3][3];
-	int fd;
-	if(set_offset(SYSFS_MPU_DIR "/in_anglvel_x_calibbias", offsets[0]) != 0
-		|| set_offset(SYSFS_MPU_DIR "/in_anglvel_y_calibbias", offsets[0] != 0)
-		|| set_offset(SYSFS_MPU_DIR "/in_anglvel_z_calibbias", offsets[0]) != 0){
-		return -1
-	}
 
-	// construct a new file path string and open for writing
-	strcpy(file_path, CONFIG_DIRECTORY);
-	strcat(file_path, GYRO_CAL_FILE);
-	cal = fopen(file_path, "w");
-	// if opening for writing failed, the directory may not exist yet
-	if (cal == 0) {
-		mkdir(CONFIG_DIRECTORY, 0777);
-		cal = fopen(file_path, "w");
-		if (cal == 0){
-			printf("could not open config directory\n");
-			printf(CONFIG_DIRECTORY);
-			printf("\n");
-			return -1;
-		}
-	}
-	
-	// write to the file, close, and exit
-	if(fprintf(cal,"%d %d %d\n%d %d %d\n%d %d %d\n", matrix[0][0], matrix[0][1], matrix[0][2],
-													matrix[1][0], matrix[1][1], matrix[1][2],
-													matrix[2][0], matrix[2][1], matrix[2][2])<0){
-
-		printf("Failed to write gyro offsets to file\n");
-		fclose(cal);
+	if(set_offset(SYSFS_IMU_DIR "/in_anglvel_x_calibbias", offsets[0]) != 0
+		|| set_offset(SYSFS_IMU_DIR "/in_anglvel_y_calibbias", offsets[1] != 0)
+		|| set_offset(SYSFS_IMU_DIR "/in_anglvel_z_calibbias", offsets[2]) != 0){
+		printf("Loading Ofsets to the sysfs entries failed");
 		return -1;
 	}
-	fclose(cal);
+
+	if(write_to_disk(MAG_CAL_FILE, matrix) != 0){
+		printf("Saving Caliberation file to the disk failed\n");
+		return -1;
+	}
 	return 0;	
 	
 }
@@ -384,40 +317,20 @@ int write_accel_offets_to_disk(int16_t offsets[3]){
 * Reads steady state gyro offsets from the disk and puts them in the IMU's 
 * gyro offset register. If no calibration file exists then make a new one.
 *******************************************************************************/
-int load_gyro_offset_scale(int16_t offsets[3]){
-	FILE *cal;
-	char file_path[100];
+int gyro_offsets_scale_matrix(int16_t offsets[3]){
+	int16_t matrix[3][3];
 
-	int fd;
-	if(set_offset(SYSFS_MPU_DIR "/in_anglvel_x_calibbias", offsets[0]) != 0
-		|| set_offset(SYSFS_MPU_DIR "/in_anglvel_y_calibbias", offsets[0] != 0)
-		|| set_offset(SYSFS_MPU_DIR "/in_anglvel_z_calibbias", offsets[0]) != 0){
-		return -1
-	}
-
-	// construct a new file path string and open for writing
-	strcpy(file_path, CONFIG_DIRECTORY);
-	strcat(file_path, GYRO_CAL_FILE);
-	cal = fopen(file_path, "w");
-	// if opening for writing failed, the directory may not exist yet
-	if (cal == 0) {
-		mkdir(CONFIG_DIRECTORY, 0777);
-		cal = fopen(file_path, "w");
-		if (cal == 0){
-			printf("could not open config directory\n");
-			printf(CONFIG_DIRECTORY);
-			printf("\n");
-			return -1;
-		}
-	}
-	
-	// write to the file, close, and exit
-	if(fprintf(cal,"%d\n%d\n%d\n", offsets[0],offsets[1],offsets[2])<0){
-		printf("Failed to write gyro offsets to file\n");
-		fclose(cal);
+	if(set_offset(SYSFS_IMU_DIR "/in_anglvel_x_calibbias", offsets[0]) != 0
+		|| set_offset(SYSFS_IMU_DIR "/in_anglvel_y_calibbias", offsets[1] != 0)
+		|| set_offset(SYSFS_IMU_DIR "/in_anglvel_z_calibbias", offsets[2]) != 0){
+		printf("Loading Ofsets to the sysfs entries failed");
 		return -1;
 	}
-	fclose(cal);
+
+	if(write_to_disk(MAG_CAL_FILE, matrix) != 0){
+		printf("Saving Caliberation file to the disk failed\n");
+		return -1;
+	}
 	return 0;	
 	
 }
@@ -430,14 +343,15 @@ int load_gyro_offset_scale(int16_t offsets[3]){
 * gyro offset register. If no calibration file exists then make a new one.
 *******************************************************************************/
 int write_mag_cal_to_disk(float offsets[3], float scale[3]){
+	
 	FILE *cal;
 	char file_path[100];
 	int ret;
 	
-	if(set_offset(SYSFS_MPU_DIR "/in_mag_x_calibbias", offsets[0]) != 0
-		|| set_offset(SYSFS_MPU_DIR "/in_mag_y_calibbias", offsets[0] != 0)
-		|| set_offset(SYSFS_MPU_DIR "/in_mag_z_calibbias", offsets[0]) != 0){
-		return -1
+	if(set_offset(SYSFS_IMU_DIR "/in_mag_x_calibbias", offsets[0]) != 0
+		|| set_offset(SYSFS_IMU_DIR "/in_mag_y_calibbias", offsets[1] != 0)
+		|| set_offset(SYSFS_IMU_DIR "/in_mag_z_calibbias", offsets[2]) != 0){
+		return -1;
 	}
 
 	// construct a new file path string and open for writing
@@ -492,7 +406,7 @@ int reset_mpu9250(){
 * configure the magnetometer for 100hz reads, also reads in the factory
 * sensitivity values into the global variables;
 *******************************************************************************/
-int initialize_magnetometer(){
+int initialize_magnetometer(imu_data_t* data){
 	uint8_t raw[3];  // calibration data stored here
 	
 	return 0;
@@ -511,9 +425,6 @@ int dmp_load_motion_driver_firmware(){
 	
 	unsigned short ii;
     unsigned short this_write;
-    /* Must divide evenly into st.hw->bank_size to avoid bank crossings. */
-
-    unsigned char cur[DMP_LOAD_CHUNK], tmp[2];
     return 0;
 }
 
@@ -557,11 +468,6 @@ int dmp_enable_feature(unsigned short mask){
     unsigned char tmp[10];
 
     /* Set integration scale factor. */
-    tmp[0] = (unsigned char)((GYRO_SF >> 24) & 0xFF);
-    tmp[1] = (unsigned char)((GYRO_SF >> 16) & 0xFF);
-    tmp[2] = (unsigned char)((GYRO_SF >> 8) & 0xFF);
-    tmp[3] = (unsigned char)(GYRO_SF & 0xFF);
-
     return 0;
 }
 
@@ -573,18 +479,6 @@ int dmp_enable_feature(unsigned short mask){
 * with accelerometer and gyro filtering.
 *******************************************************************************/
 int dmp_enable_6x_lp_quat(unsigned char enable){
-    unsigned char regs[4];
-    if (enable) {
-        regs[0] = DINA20;
-        regs[1] = DINA28;
-        regs[2] = DINA30;
-        regs[3] = DINA38;
-    } else
-        memset(regs, 0xA3, 4);
-
-    mpu_write_mem(CFG_8, 4, regs);
-
-    //return mpu_reset_fifo();
 	return 0;
 }
 
@@ -595,19 +489,6 @@ int dmp_enable_6x_lp_quat(unsigned char enable){
 * here but remains as a vestige of the Invensense DMP code.
 *******************************************************************************/
 int dmp_enable_lp_quat(unsigned char enable){
-    unsigned char regs[4];
-    if (enable) {
-        regs[0] = DINBC0;
-        regs[1] = DINBC2;
-        regs[2] = DINBC4;
-        regs[3] = DINBC6;
-    }
-    else
-        memset(regs, 0x8B, 4);
-
-    mpu_write_mem(CFG_LP_QUAT, 4, regs);
-
-    //return mpu_reset_fifo();
 	return 0;
 }
 
@@ -674,6 +555,7 @@ int read_dmp_fifo(){
     return 0;
 }
 
+
 /*******************************************************************************
 * int data_fusion()
 *
@@ -685,14 +567,20 @@ int read_dmp_fifo(){
 * with the sample rate so the filter rise time remains constant with different
 * sample rates.
 *******************************************************************************/
+d_filter_t low_pass, high_pass; // for magnetometer Yaw filtering
+
 int data_fusion(){
 	float fusedEuler[3], magQuat[4], unfusedQuat[4];
-	float deltaDMPYaw, deltaMagYaw, newMagYaw, newYaw;
-	static float lastDMPYaw, lastYaw;
+	static float newMagYaw = 0;
+	static float newDMPYaw = 0;
+	float lastDMPYaw, lastMagYaw, newYaw; 
+	static float dmp_spin_counter = 0;
+	static float mag_spin_counter = 0;
 	static int first_run = 1; // set to 0 after first call to this function
 	
+	
 	// start by filling in the roll/pitch components of the fused euler
-	// angles from the DMP generatd angles. Ignore yaw for now, we have to
+	// angles from the DMP generated angles. Ignore yaw for now, we have to
 	// filter that later. 
 	fusedEuler[TB_PITCH_X] = data_ptr->dmp_TaitBryan[TB_PITCH_X];
 	//fusedEuler[TB_ROLL_Y] = -(data_ptr->dmp_TaitBryan[TB_ROLL_Y]);
@@ -701,10 +589,6 @@ int data_fusion(){
 
 	// generate a quaternion rotation of just roll/pitch
 	TaitBryanToQuaternion(fusedEuler, unfusedQuat);
-
-	// find delta yaw from last time and record current dmp_yaw for next time
-	deltaDMPYaw = lastDMPYaw - data_ptr->dmp_TaitBryan[TB_YAW_Z];
-	lastDMPYaw = data_ptr->dmp_TaitBryan[TB_YAW_Z];
 
 	// create a quaternion vector from the current magnetic field vector
 	// in IMU body coordinate frame. Since the DMP quaternion is aligned with
@@ -753,6 +637,7 @@ int data_fusion(){
 
 	// from the aligned magnetic field vector, find a yaw heading
 	// check for validity and make sure the heading is positive
+	lastMagYaw = newMagYaw; // save from last loop
 	newMagYaw = -atan2f(magQuat[QUAT_Y], magQuat[QUAT_X]);
 	if (newMagYaw != newMagYaw) {
 		#ifdef WARNINGS
@@ -760,53 +645,48 @@ int data_fusion(){
 		#endif
 		return -1;
 	}
-	
-	// record this heading in the user-accessible data struct
 	data_ptr->compass_heading = newMagYaw;
-	if (newMagYaw < 0.0f) newMagYaw = TWO_PI + newMagYaw;
+	// save DMP last from time and record newDMPYaw for this time
+	lastDMPYaw = newDMPYaw;
+	newDMPYaw = data_ptr->dmp_TaitBryan[TB_YAW_Z];
 	
-	// if this is the first run, set yaw to the compass heading
+	// the outputs from atan2 and dmp are between -PI and PI.
+	// for our filters to run smoothly, we can't have them jump between -PI
+	// to PI when doing a complete spin. Therefore we check for a skip and 
+	// increment or decrement the spin counter
+	if(newMagYaw-lastMagYaw < -PI) mag_spin_counter++;
+	else if (newMagYaw-lastMagYaw > PI) mag_spin_counter--;
+	if(newDMPYaw-lastDMPYaw < -PI) dmp_spin_counter++;
+	else if (newDMPYaw-lastDMPYaw > PI) dmp_spin_counter--;
+	
+	// if this is the first run, set up filters
 	if(first_run){
-		lastYaw = newMagYaw;
+		lastMagYaw = newMagYaw;
+		lastDMPYaw = newDMPYaw;
+		mag_spin_counter = 0;
+		dmp_spin_counter = 0;
+		
+		// generate complementary filters
+		float dt = 1.0/config.dmp_sample_rate;
+		low_pass  = generateFirstOrderLowPass(dt,config.compass_time_constant);
+		high_pass = generateFirstOrderHighPass(dt,config.compass_time_constant);
+		prefill_filter_inputs(&low_pass,newMagYaw);
+		prefill_filter_outputs(&low_pass,newMagYaw);
+		prefill_filter_inputs(&high_pass,newDMPYaw);
 		first_run = 0;
 	}
 	
-	// update the last filtered (fused) yaw by the amount the DMP yaw changed
-	// which is based purely on the gyro. Make sure it stays in 0-2PI
-	newYaw = lastYaw + deltaDMPYaw;
-	if (newYaw > TWO_PI) newYaw-=TWO_PI;
-	else if (newYaw < 0.0f)
-		newYaw += TWO_PI;
-	 
-	// find difference between absolute compass heading and what the gyro
-	// predicts is our new heading. This should be very small in normal 
-	// operation but keep between +- PI anyway
-	deltaMagYaw = newMagYaw - newYaw;
-	if (deltaMagYaw >= PI)
-		deltaMagYaw -= TWO_PI;
-	else if (deltaMagYaw < -PI)
-		deltaMagYaw += TWO_PI;
-
-	// now find our final filtered newYaw by adding a fraction of the error
-	// to the gyro-predicted yaw, also check to avoid divide by 0
-	if (YAW_MIX_FACTOR == 0){
-		printf("ERROR: YAW_MIX_FACTOR must be >0\n");
-		return -1;
-	}
-	newYaw += deltaMagYaw * 100.0 \
-				/ ((float)YAW_MIX_FACTOR * (float)config.dmp_sample_rate);
-
-	// yet again, bound the yaw between 0 and 2PI and store for next time
-	if (newYaw > TWO_PI)
-		newYaw -= TWO_PI;
-	else if (newYaw < 0.0f)
-		newYaw += TWO_PI;
-	lastYaw = newYaw;
+	// new Yaw is the sum of low and high pass complementary filters.
+	newYaw = march_filter(&low_pass,newMagYaw+(TWO_PI*mag_spin_counter)) \
+			+ march_filter(&high_pass,newDMPYaw+(TWO_PI*dmp_spin_counter));
+			
+	newYaw = fmodf(newYaw,TWO_PI); // remove the effect of the spins
+	if (newYaw > PI) newYaw -= TWO_PI; // bound between +- PI
+	else if (newYaw < -PI) newYaw += TWO_PI; // bound between +- PI
 
 	// Euler angles expect a yaw between -pi to pi so slide it again and
 	// store in the user-accessible fused euler angle
-	if (newYaw > PI)
-		newYaw -= TWO_PI;
+	
 	data_ptr->fused_TaitBryan[TB_YAW_Z] = newYaw;
 	data_ptr->fused_TaitBryan[TB_PITCH_X] = data_ptr->dmp_TaitBryan[TB_PITCH_X];
 	data_ptr->fused_TaitBryan[TB_ROLL_Y] = data_ptr->dmp_TaitBryan[TB_ROLL_Y];
@@ -815,7 +695,6 @@ int data_fusion(){
 	TaitBryanToQuaternion(data_ptr->fused_TaitBryan, data_ptr->fused_quat);
 	return 0;
 }
-
 
 /*******************************************************************************
 * unsigned short inv_row_2_scale(signed char row[])
@@ -902,6 +781,7 @@ void print_orientation_info(){
 	orient = inv_orientation_matrix_to_scalar(ydown);
 	printf("y-down: %d\n", orient);
 }
+
 
 /*******************************************************************************
 * int was_last_read_successful()

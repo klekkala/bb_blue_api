@@ -16,6 +16,7 @@
 // Calibration File Locations
 #define CONFIG_DIRECTORY "/etc/robotics/"
 #define DSM2_CAL_FILE	"dsm2.cal"
+#define ACCEL_CAL_FILE 	"accel.cal"
 #define GYRO_CAL_FILE 	"gyro.cal"
 #define MAG_CAL_FILE	"mag.cal"
 
