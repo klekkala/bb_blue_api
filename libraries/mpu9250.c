@@ -265,7 +265,7 @@ int accel_offets_scale_matrix(int16_t offsets[3]){
 	int16_t matrix[3][3];
 
 	if(set_offset(SYSFS_IMU_DIR "/in_anglvel_x_calibbias", offsets[0]) != 0
-		|| set_offset(SYSFS_IMU_DIR "/in_anglvel_y_calibbias", offsets[1] != 0)
+		|| set_offset(SYSFS_IMU_	DIR "/in_anglvel_y_calibbias", offsets[1] != 0)
 		|| set_offset(SYSFS_IMU_DIR "/in_anglvel_z_calibbias", offsets[2]) != 0){
 		printf("Loading Ofsets to the sysfs entries failed");
 		return -1;
@@ -752,4 +752,10 @@ int was_last_read_successful(){
 *******************************************************************************/
 uint64_t micros_since_last_interrupt(){
 	return micros_since_epoch() - last_interrupt_timestamp_micros;
+}
+
+imu_data_t testdata;
+int main(){
+	read_accel_data(testdata);
+	printf("%d %d %d\n", data->accel[0], data->accel[1], data->accel[2]);
 }
