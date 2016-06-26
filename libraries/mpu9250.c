@@ -15,11 +15,6 @@
 #define min(a, b) 	((a < b) ? a : b)
 
 
-// there should be 28 or 35 bytes in the FIFO if the magnetometer is disabled
-// or enabled.
-#define FIFO_LEN_NO_MAG 28
-#define FIFO_LEN_MAG	35
-
 // error threshold checks
 #define QUAT_ERROR_THRESH       (1L<<24)
 #define QUAT_MAG_SQ_NORMALIZED  (1L<<28)
@@ -33,34 +28,23 @@ int last_interrupt_timestamp_micros;
 /*******************************************************************************
 *	Local variables
 *******************************************************************************/
-imu_config_t config;
-int bypass_en;  
-int dmp_en;
-int packet_len;
-pthread_t imu_interrupt_thread;
+imu_config_t config; 
 int (*imu_interrupt_func)();
-int interrupt_running;
-float mag_adjust[3];
-imu_data_t* data_ptr;
 
 /*******************************************************************************
 *	config functions for internal use only
 *******************************************************************************/
 int reset_mpu9250();
 int initialize_magnetometer(imu_data_t* data);
-int power_down_magnetometer();
 int dmp_load_motion_driver_firmware();
 int dmp_set_orientation(unsigned short orient);
 //unsigned short inv_orientation_matrix_to_scalar(const signed char *mtx);
 unsigned short inv_row_2_scale(signed char row[]);
-int dmp_enable_gyro_cal(unsigned char enable);
 int dmp_enable_lp_quat(unsigned char enable);
 int dmp_enable_6x_lp_quat(unsigned char enable);
-int mpu_reset_fifo(void);
 int mpu_set_sample_rate(int rate);
 int dmp_set_fifo_rate(unsigned short rate);
 int dmp_enable_feature(unsigned short mask);
-int mpu_set_dmp_state(unsigned char enable);
 int set_int_enable(unsigned char enable);
 int dmp_set_interrupt_mode(unsigned char mode);
 int read_dmp();
@@ -143,8 +127,8 @@ int read_accel_data(imu_data_t *data){
 	// new register data stored here
 	
 	data->raw_accel[0] = read_raw_data(SYSFS_IMU_DIR "/in_accel_x_raw");
-	data->raw_accel[0] = read_raw_data(SYSFS_IMU_DIR "/in_accel_y_raw");
-	data->raw_accel[0] = read_raw_data(SYSFS_IMU_DIR "/in_accel_z_raw");
+	data->raw_accel[1] = read_raw_data(SYSFS_IMU_DIR "/in_accel_y_raw");
+	data->raw_accel[2] = read_raw_data(SYSFS_IMU_DIR "/in_accel_z_raw");
 
 	// Fill in real unit values
 	data->accel[0] = data->raw_accel[0] * data->accel_to_ms2;
@@ -205,23 +189,8 @@ int read_mag_data(imu_data_t* data){
 * reads the latest temperature of the imu. 
 *******************************************************************************/
 int read_imu_temp(imu_data_t* data){
-	int16_t temp_val;
 	
-	int fd;
-	char buf[MAX_BUF];
-
-	snprintf(buf, sizeof(buf), SYSFS_IMU_DIR "/in_temp_raw");
-	fd = open(buf, O_RDONLY);
-
-	if (fd < 0) {
-		perror("error openning in_temp_raw sysfs entries");
-		/*Still some changs to make in the error handling*/
-		return fd;
-	}
-
-	// Turn the MSB and LSB into a signed 16-bit value
-	read(fd, &temp_val, 2);
-	close(fd);
+	int16_t temp_val = read_raw_data(SYSFS_IMU_DIR "/in_temp_raw");;
 
 	// convert to real units
 	data->temp = ((float)(temp_val)/TEMP_SENSITIVITY) + 21.0;
@@ -303,7 +272,7 @@ int accel_offets_scale_matrix(int16_t offsets[3]){
 	}
 
 	if(write_to_disk(MAG_CAL_FILE, matrix) != 0){
-		printf("Saving Caliberation file to the disk failed\n");
+		printf("Saving accel Caliberation file to the disk failed\n");
 		return -1;
 	}
 	return 0;	
@@ -317,7 +286,7 @@ int accel_offets_scale_matrix(int16_t offsets[3]){
 * Reads steady state gyro offsets from the disk and puts them in the IMU's 
 * gyro offset register. If no calibration file exists then make a new one.
 *******************************************************************************/
-int gyro_offsets_scale_matrix(int16_t offsets[3]){
+int gyro_offsets_scale_matrix(int16_t offsets[3], float scale){
 	int16_t matrix[3][3];
 
 	if(set_offset(SYSFS_IMU_DIR "/in_anglvel_x_calibbias", offsets[0]) != 0
@@ -327,8 +296,8 @@ int gyro_offsets_scale_matrix(int16_t offsets[3]){
 		return -1;
 	}
 
-	if(write_to_disk(MAG_CAL_FILE, matrix) != 0){
-		printf("Saving Caliberation file to the disk failed\n");
+	if(write_to_disk(GYRO_CAL_FILE, matrix) != 0){
+		printf("Saving gyro Caliberation file to the disk failed\n");
 		return -1;
 	}
 	return 0;	
@@ -342,7 +311,7 @@ int gyro_offsets_scale_matrix(int16_t offsets[3]){
 * Reads steady state gyro offsets from the disk and puts them in the IMU's 
 * gyro offset register. If no calibration file exists then make a new one.
 *******************************************************************************/
-int write_mag_cal_to_disk(float offsets[3], float scale[3]){
+int write_mag_cal_to_disk(float offsets[3], float scale){
 	
 	FILE *cal;
 	char file_path[100];
@@ -354,35 +323,10 @@ int write_mag_cal_to_disk(float offsets[3], float scale[3]){
 		return -1;
 	}
 
-	// construct a new file path string and open for writing
-	strcpy(file_path, CONFIG_DIRECTORY);
-	strcat(file_path, MAG_CAL_FILE);
-	cal = fopen(file_path, "w");
-	// if opening for writing failed, the directory may not exist yet
-	if (cal == 0) {
-		mkdir(CONFIG_DIRECTORY, 0777);
-		cal = fopen(file_path, "w");
-		if (cal == 0){
-			printf("could not open config directory\n");
-			printf(CONFIG_DIRECTORY);
-			printf("\n");
-			return -1;
-		}
-	}
-	
-	// write to the file, close, and exit
-	ret = fprintf(cal,"%f\n%f\n%f\n%f\n%f\n%f\n", 	offsets[0],\
-													offsets[1],\
-													offsets[2],\
-													scale[0],\
-													scale[1],\
-													scale[2]);
-	if(ret<0){
-		printf("Failed to write mag calibration to file\n");
-		fclose(cal);
+	if(write_to_disk(MAG_CAL_FILE, matrix) != 0){
+		printf("Saving mag Caliberation file to the disk failed\n");
 		return -1;
 	}
-	fclose(cal);
 	return 0;	
 	
 }
