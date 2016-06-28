@@ -49,12 +49,27 @@
 
 			/* add any i2c devices on the bus here */
 
-			mpu6500@68 {
-				compatible = "invensense,mpu6500";
+			mpu9150@68 {
+				compatible = "invensense,mpu9150";
 				reg = <0x68>;
 				interrupt-parent = <&gpio3>;
 				interrupts = <21 1>;
-	};
+
+				#address-cells = <1>;
+				#size-cells = <0>;
+
+				i2c@0 {
+					reg = <0>;
+					#address-cells = <1>;
+					#size-cells = <0>;
+
+					ak8975@0c {
+						compatible = "ak,ak8975";
+						reg = <0x0c>;
+						
+							};
+					};
+				};
 		};
 	};
 };
