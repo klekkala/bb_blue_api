@@ -737,7 +737,6 @@ int uart_send_byte(int bus, char data);
 int uart_read_bytes(int bus, int bytes, char* buf);
 int uart_read_line(int bus, int max_bytes, char* buf);
 
-
 /*******************************************************************************
 * @ int kill_robot()
 *
@@ -846,7 +845,6 @@ int suppress_stdout(int (*func)(void));
 int suppress_stderr(int (*func)(void));
 int continue_or_quit();
 
-
 /*******************************************************************************
 * Vector and Quaternion Math
 *
@@ -868,8 +866,88 @@ void TaitBryanToQuaternion(float v[3], float q[4]);
 void tilt_compensate(float in[4], float tilt[4], float out[4]);
 void quaternionConjugate(float in[4], float out[4]);
 void quaternionMultiply(float a[4], float b[4], float out[4]);
-float vector3DotProduct(float a[3], float b[3]);
+float vector3vector_dot_product(float a[3], float b[3]);
 void vector3CrossProduct(float a[3], float b[3], float d[3]);
+
+/*******************************************************************************
+* Linear Algebra
+*
+*
+*******************************************************************************/
+typedef struct matrix_t{
+	int rows;
+	int cols;
+	float** data;
+	int initialized;
+} matrix_t;
+
+typedef struct vector_t{
+	int len;
+	float* data;
+	int initialized;
+} vector_t;
+
+// Basic Matrix creation, modification, and access
+matrix_t create_matrix(int rows, int cols);
+void destroy_matrix(matrix_t* A);
+matrix_t create_empty_matrix();
+matrix_t duplicate_matrix(matrix_t A);
+matrix_t create_square_matrix(int n);
+matrix_t create_random_matrix(int rows, int cols);
+matrix_t create_identity_matrix(int dim);
+matrix_t create_diagonal_matrix(vector_t v);
+matrix_t create_matrix_of_ones(int dim);
+int set_matrix_entry(matrix_t* A, int row, int col, float val);
+float get_matrix_entry(matrix_t A, int row, int col);
+void print_matrix(matrix_t A);
+void print_matrix_sci_notation(matrix_t A);
+
+// Basic Vector creation, modification, and access
+vector_t create_vector(int n);
+void destroy_vector(vector_t* v);
+vector_t create_empty_vector();
+vector_t duplicate_vector(vector_t v);
+vector_t create_random_vector(int len);
+vector_t create_vector_of_ones(int len);
+vector_t create_vector_from_array(int len, float* array);
+int set_vector_entry(vector_t* v, int pos, float val);
+float get_vector_entry(vector_t v, int pos);
+void print_vector(vector_t v);
+void print_vector_sci_notation(vector_t v);
+
+// Multiplication, Addition, and other transforms
+matrix_t multiply_matrices(matrix_t A, matrix_t Bm);
+int matrix_times_scalar(matrix_t* A, float s);
+int vector_times_scalar(vector_t* v, float s);
+vector_t matrix_times_col_vec(matrix_t A, vector_t v);
+vector_t row_vec_times_matrix(vector_t v, matrix_t A);
+matrix_t add_matrices(matrix_t A, matrix_t B);
+int transpose_matrix(matrix_t* A);
+
+// vector operations
+float vector_norm(vector_t v);
+vector_t vector_projection(vector_t v, vector_t e);
+matrix_t vector_outer_product(vector_t v1, vector_t v2);
+float vector_dot_product(vector_t v1, vector_t v2);
+vector_t cross_product_3d(vector_t v1, vector_t v2);
+vector_t poly_conv(vector_t v1, vector_t v2);
+vector_t poly_power(vector_t v, int N);
+vector_t poly_butter(int N, float wc);
+float standard_deviation(vector_t v);
+float vector_mean(vector_t v);
+
+// Advanced matrix operations
+float matrix_determinant(matrix_t A);
+int LUP_decomposition(matrix_t A, matrix_t* L, matrix_t* U, matrix_t* P);
+int QR_decomposition(matrix_t A, matrix_t* Q, matrix_t* R);
+matrix_t invert_matrix(matrix_t A);
+matrix_t householder_matrix(vector_t v);
+
+// linear system solvers
+vector_t lin_system_solve(matrix_t A, vector_t b);
+vector_t lin_system_solve_qr(matrix_t A, vector_t b);
+int fit_ellipsoid(matrix_t points, vector_t* center, vector_t* lengths);
+
 
 /*******************************************************************************
 * Ring Buffer
@@ -880,6 +958,7 @@ void vector3CrossProduct(float a[3], float b[3], float d[3]);
 *
 * The user creates their own instance of a buffer and passes a pointer to the
 * these ring_buf functions to perform normal operations. 
+
 * @ int reset_ring_buf(ring_buf* buf)
 *
 * sets all values in the buffer to 0 and sets the buffer position back to 0
@@ -925,7 +1004,7 @@ float get_ring_buf_value(ring_buf_t* buf, int position);
 * You may read values directly from your own instance of the d_filter_t struct.
 * To modify the contents of the filter please use the functions provided here.
 *
-* @ d_filter_t generateFilter(int order,float dt,float num[],float den[])
+* @ d_filter_t create_filter(int order,float dt,float num[],float den[])
 *
 * Allocate memory for a filter of specified order & fill with transfer
 * function constants. Use enable_saturation immediately after this if you want
@@ -971,24 +1050,24 @@ float get_ring_buf_value(ring_buf_t* buf, int position);
 * Returns the most recent input to the filter. Alternatively the user could
 * access the value from their d_filter_t_t struct with filter.newest_input
 *
-* @ d_filter_t generateFirstOrderLowPass(float dt, float time_constant)
+* @ d_filter_t create_first_order_low_pass(float dt, float time_constant)
 *
 * Returns a configured and ready to use d_filter_t_t struct with a first order
 * low pass transfer function. dt is in units of seconds and time_constant is 
 * the number of seconds it takes to rise to 63.4% of a steady-state input.
 *
-* @ d_filter_t generateFirstOrderHighPass(float dt, float time_constant)
+* @ d_filter_t create_first_order_high_pass(float dt, float time_constant)
 *
 * Returns a configured and ready to use d_filter_t_t struct with a first order
 * high pass transfer function. dt is in units of seconds and time_constant is 
 * the number of seconds it takes to decay by 63.4% of a steady-state input.
 *
-* @ d_filter_t generateIntegrator(float dt)
+* @ d_filter_t create_integrator(float dt)
 *
 * Returns a configured and ready to use d_filter_t_t struct with the transfer
 * function for a first order time integral.
 *
-* @ d_filter_t generatePID(float kp, float ki, float kd, float Tf, float dt)
+* @ d_filter_t create_pid(float kp, float ki, float kd, float Tf, float dt)
 *
 * discrete-time implementation of a parallel PID controller with rolloff.
 * This is equivalent to the Matlab function: C = pid(Kp,Ki,Kd,Tf,Ts)
@@ -1001,113 +1080,50 @@ float get_ring_buf_value(ring_buf_t* buf, int position);
 *
 * Prints the order, numerator, and denominator coefficients for debugging.
 *******************************************************************************/
-#define MAX_SISO_ORDER 16
 
 typedef struct d_filter_t{
 	int order;
 	float dt;
 	// input scaling factor usually =1, useful for fast controller tuning
 	float prescaler; 
-	float numerator[MAX_SISO_ORDER];	// points to array of numerator constants
-	float denominator[MAX_SISO_ORDER];	// points to array 
+	vector_t numerator;	// numerator coefficients 
+	vector_t denominator;	// denominator coefficients 
 	int saturation_en;
 	float saturation_min;
 	float saturation_max;
 	int saturation_flag;
-	ring_buf_t in_buf;
+	ring_buf_t in_buf;			// dynamically allocated buffers
 	ring_buf_t out_buf;
 	
 	float newest_input;
 	float newest_output;
+	
+	int initialized;
 } d_filter_t;
 
-d_filter_t generate_filter(int order,float dt,float num[],float den[]);
+d_filter_t create_filter(int order, float dt, float* num, float* den);
+int destroy_filter(d_filter_t* filter);
+d_filter_t create_empty_filter();
 float march_filter(d_filter_t* filter, float new_input);
 int reset_filter(d_filter_t* filter);
 int enable_saturation(d_filter_t* filter, float min, float max);
-int did_filter_t_saturate(d_filter_t* filter);
+int did_filter_saturate(d_filter_t* filter);
 float previous_filter_input(d_filter_t* filter, int steps);
 float previous_filter_output(d_filter_t* filter, int steps);
 float newest_filter_output(d_filter_t* filter);
 float newest_filter_input(d_filter_t* filter);
-d_filter_t generateFirstOrderLowPass(float dt, float time_constant);
-d_filter_t generateFirstOrderHighPass(float dt, float time_constant);
-d_filter_t generateIntegrator(float dt);
-d_filter_t generatePID(float kp, float ki, float kd, float Tf, float dt);
+int prefill_filter_inputs(d_filter_t* filter, float in);
+int prefill_filter_outputs(d_filter_t* filter, float out);
 int print_filter_details(d_filter_t* filter);
-
-
-/*******************************************************************************
-* Linear Algebra
-*
-*
-*******************************************************************************/
-
-typedef struct matrix_t{
-	int rows;
-	int cols;
-	float** data;
-	int initialized;
-} matrix_t;
-
-typedef struct vector_t{
-	int len;
-	float* data;
-	int initialized;
-} vector_t;
-
-
-// Basic Matrix creation, modification, and access
-matrix_t createMatrix(int rows, int cols);
-matrix_t duplicateMatrix(matrix_t A);
-matrix_t createSquareMatrix(int n);
-matrix_t createRandomMatrix(int rows, int cols);
-matrix_t createIdentityMatrix(int dim);
-matrix_t createDiagonalMatrix(vector_t v);
-matrix_t createMatrixOfOnes(int dim);
-int setMatrixEntry(matrix_t* A, int row, int col, float val);
-float getMatrixEntry(matrix_t A, int row, int col);
-void printMatrix(matrix_t A);
-void printMatrixSciNotation(matrix_t A);
-void destroyMatrix(matrix_t* A);
-
-// Basic Vector creation, modification, and access
-vector_t createVector(int n);
-vector_t duplicateVector(vector_t v);
-vector_t createRandomVector(int len);
-vector_t createVectorOfOnes(int len);
-int setVectorEntry(vector_t* v, int pos, float val);
-float getVectorEntry(vector_t v, int pos);
-void printVector(vector_t v);
-void printVectorSciNotation(vector_t v);
-void destroyVector(vector_t* v);
-
-// Matrix Multiplication, Addition, and other transforms
-matrix_t matrixMultiply(matrix_t A, matrix_t B);
-int matrixTimesScalar(matrix_t* A, float s);
-int vectorTimesScalar(vector_t* v, float s);
-vector_t matrixTimesColVec(matrix_t A, vector_t v);
-vector_t rowVecTimesMatrix(vector_t v, matrix_t A);
-matrix_t matrixAdd(matrix_t A, matrix_t B);
-int transposeMatrix(matrix_t* A);
-
-// vector operations
-float vectorNorm(vector_t v);
-vector_t vectorProjection(vector_t v, vector_t e);
-matrix_t outerProduct(vector_t v1, vector_t v2);
-float dotProduct(vector_t v1, vector_t v2);
-vector_t crossProduct3D(vector_t v1, vector_t v2);
-
-// Advanced matrix operations
-float matrixDeterminant(matrix_t A);
-int matrixInv(matrix_t* A);
-matrix_t Householder(vector_t v);
-int QRdecomposition(matrix_t A, matrix_t*Q, matrix_t* R);
-
-// linear system solvers
-vector_t linSolve(matrix_t A, vector_t b);
-vector_t linSolveQR(matrix_t A, vector_t b);
-int fitEllipsoid(matrix_t points, vector_t* center, vector_t* lengths);
+d_filter_t multiply_filters(d_filter_t f1, d_filter_t f2);
+d_filter_t C2DTustin(vector_t num, vector_t den, float dt, float w);
+d_filter_t create_first_order_lowpass(float dt, float time_constant);
+d_filter_t create_first_order_highpass(float dt, float time_constant);
+d_filter_t create_butterworth_lowpass(int order, float dt, float wc);
+d_filter_t create_butterworth_highpass(int order, float dt, float wc);
+d_filter_t create_integrator(float dt);
+d_filter_t create_double_integrator(float dt);
+d_filter_t create_pid(float kp, float ki, float kd, float Tf, float dt);
 
 
 
