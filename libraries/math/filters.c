@@ -7,9 +7,10 @@ extra floating point operations done on the main processor.
 
 
 #include "../bb_blue_api.h"
+#include "../useful_includes.h"
 
-#define PI  3.14159265358979323846f
- #define Kp 2.0f * 5.0f // these are the free parameters in the Mahony filter and fusion scheme, Kp for proportional feedback, Ki for integral
+
+#define Kp 2.0f * 5.0f // these are the free parameters in the Mahony filter and fusion scheme, Kp for proportional feedback, Ki for integral
 #define Ki 0.0f 
 
 

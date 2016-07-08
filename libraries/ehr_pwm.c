@@ -41,11 +41,11 @@ either expressed or implied, of the FreeBSD Project.
 
 int duty_fd[6]; 	// pointers to duty cycle file descriptor
 int period_ns[3]; 	//one period (frequency) per subsystem
-char simple_pwm_initialized[3] = {0,0,0};
+char pwm_initialized[3] = {0,0,0};
 
 
 
-int simple_init_pwm(int subsystem, int frequency){
+int init_pwm(int subsystem, int frequency){
 	int export_fd, len;
 	char buf[MAXBUF];
 	DIR* dir;
@@ -62,7 +62,7 @@ int simple_init_pwm(int subsystem, int frequency){
 	}
 	
 	// unexport the channels first
-	simple_uninit_pwm(subsystem);
+	uninit_pwm(subsystem);
 	
 	export_fd = open(SYSFS_PWM_DIR "/export", O_WRONLY);
 	if (export_fd < 0) {
@@ -150,11 +150,11 @@ int simple_init_pwm(int subsystem, int frequency){
 	close(polarityB_fd);
 	
 	// everything successful
-	simple_pwm_initialized[subsystem] = 1;
+	pwm_initialized[subsystem] = 1;
 	return 0;
 }
 
-int simple_uninit_pwm(int subsystem){
+int uninit_pwm(int subsystem){
 	int fd, len;
 	char buf[MAXBUF];
 	if(subsystem<0 || subsystem>2){
@@ -171,13 +171,13 @@ int simple_uninit_pwm(int subsystem){
 	len = snprintf(buf, sizeof(buf), "%d", (2*subsystem)+1);
 	write(fd, buf, len);
 	close(fd);
-	simple_pwm_initialized[subsystem] = 0;
+	pwm_initialized[subsystem] = 0;
 	return 0;
 	
 }
 
 
-int simple_set_pwm_duty(int subsystem, char ch, float duty){
+int set_pwm_duty(int subsystem, char ch, float duty){
 	// start with sanity checks
 	if(duty>1.0 || duty<0.0){
 		printf("duty must be between 0.0 & 1.0\n");
@@ -186,10 +186,10 @@ int simple_set_pwm_duty(int subsystem, char ch, float duty){
 	
 	// set the duty
 	int duty_ns = duty*period_ns[subsystem];
-	return simple_set_pwm_duty_ns(subsystem, ch, duty_ns);
+	return set_pwm_duty_ns(subsystem, ch, duty_ns);
 }
 
-int simple_set_pwm_duty_ns(int subsystem, char ch, int duty_ns){
+int set_pwm_duty_ns(int subsystem, char ch, int duty_ns){
 	int len;
 	char buf[MAXBUF];
 	// start with sanity checks
@@ -198,9 +198,9 @@ int simple_set_pwm_duty_ns(int subsystem, char ch, int duty_ns){
 		return -1;
 	}
 	// initialize subsystem if not already
-	if(simple_pwm_initialized[subsystem]==0){
+	if(pwm_initialized[subsystem]==0){
 		printf("initializing PWMSS%d with default PWM frequency\n", subsystem);
-		simple_init_pwm(subsystem, DEFAULT_FREQ);
+		init_pwm(subsystem, DEFAULT_FREQ);
 	}
 	// boundary check
 	if(duty_ns>period_ns[subsystem] || duty_ns<0){

@@ -65,9 +65,10 @@ typedef enum state_t {
 	EXITING
 } state_t;
 
-extern enum state_t state;
-
-
+state_t get_state();
+int set_state(state_t new_state);
+int print_state();
+enum state_t state;
 
 /*******************************************************************************
 * LEDs
@@ -1166,9 +1167,9 @@ int print_cpu_frequency();
 // This relies on a device tree overlay enabling hrpwm 
 
 
-int simple_init_pwm(int subsystem, int frequency);
-int simple_uninit_pwm(int subsystem);
-int simple_set_pwm_duty(int subsystem, char ch, float duty);
-int simple_set_pwm_duty_ns(int subsystem, char ch, int duty_ns);
+int init_pwm(int subsystem, int frequency);
+int uninit_pwm(int subsystem);
+int set_pwm_duty(int subsystem, char ch, float duty);
+int set_pwm_duty_ns(int subsystem, char ch, int duty_ns);
 
 #endif //ROBOTICS_CAPE

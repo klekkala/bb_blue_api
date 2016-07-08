@@ -91,7 +91,6 @@ int set_imu_config_to_defaults(imu_config_t *conf){
 * Set up the imu for one-shot sampling of sensor data by user
 *******************************************************************************/
 int initialize_imu(imu_data_t *data, imu_config_t conf){  
-	uint8_t c;
 	return 0;
 }
 
@@ -102,7 +101,7 @@ int16_t read_raw_data(const char* directory){
 	int16_t val;
 	char buf[MAX_BUF];
 
-	snprintf(buf, sizeof(buf), directory);
+	snprintf(buf, sizeof(buf), "%s", directory);
 	fd = open(buf, O_RDONLY);
 
 	if (fd < 0) {
@@ -190,7 +189,7 @@ int read_mag_data(imu_data_t* data){
 *******************************************************************************/
 int read_imu_temp(imu_data_t* data){
 	
-	int16_t temp_val = read_raw_data(SYSFS_IMU_DIR "/in_temp_raw");;
+	int16_t temp_val = read_raw_data(SYSFS_IMU_DIR "/in_temp_raw");
 
 	// convert to real units
 	data->temp = ((float)(temp_val)/TEMP_SENSITIVITY) + 21.0;
@@ -204,7 +203,8 @@ int set_offset(const char* directory, int16_t offset){
 
 	int fd;
 	char buf[MAX_BUF];
-	snprintf(buf, sizeof(buf), directory);
+	//char* write_buffer =''
+	snprintf(buf, sizeof(buf), "%s", directory);
 	fd = open(buf, O_WRONLY);
 
 	if (fd < 0) {
@@ -212,7 +212,8 @@ int set_offset(const char* directory, int16_t offset){
 		return fd;
 	}
 
-	write(fd, offset, 2);
+	//offset = char* (offset);
+	write(fd, &offset, 2);
 	close(fd);
 
 	return 0;
@@ -313,9 +314,6 @@ int gyro_offsets_scale_matrix(int16_t offsets[3], float scale){
 *******************************************************************************/
 int write_mag_cal_to_disk(float offsets[3], float scale){
 	
-	FILE *cal;
-	char file_path[100];
-	int ret;
 	int16_t matrix[3][3];
 	
 	if(set_offset(SYSFS_IMU_DIR "/in_mag_x_calibbias", offsets[0]) != 0
@@ -352,7 +350,6 @@ int reset_mpu9250(){
 * sensitivity values into the global variables;
 *******************************************************************************/
 int initialize_magnetometer(imu_data_t* data){
-	uint8_t raw[3];  // calibration data stored here
 	
 	return 0;
 }
@@ -367,9 +364,6 @@ int initialize_magnetometer(imu_data_t* data){
 
 
 int dmp_load_motion_driver_firmware(){
-	
-	unsigned short ii;
-    unsigned short this_write;
     return 0;
 }
 
@@ -386,15 +380,14 @@ int dmp_load_motion_driver_firmware(){
 
 
 int dmp_set_fifo_rate(unsigned short rate){
-    unsigned short div;
-    unsigned char tmp[8];
-
+    
+    //unsigned short div;
     if (rate > DMP_SAMPLE_RATE){
         return -1;
 	}
 	
 	// set the samplerate divider
-    div = 1000 / rate - 1;
+    //div = 1000 / rate - 1;
     return 0;
 }
 
@@ -410,7 +403,6 @@ int dmp_set_fifo_rate(unsigned short rate){
 * a fixed set of features but we keep it as is since it works fine.
 *******************************************************************************/
 int dmp_enable_feature(unsigned short mask){
-    unsigned char tmp[10];
 
     /* Set integration scale factor. */
     return 0;
@@ -469,7 +461,7 @@ int mpu_set_sample_rate(int rate){
 		return -1;
 	}
 	 /* Keep constant sample rate, FIFO rate controlled by DMP. */
-	uint8_t div = (1000/rate) - 1;
+	//uint8_t div = (1000/rate) - 1;
 	return 0;
 }
 
@@ -756,8 +748,8 @@ uint64_t micros_since_last_interrupt(){
 	return micros_since_epoch() - last_interrupt_timestamp_micros;
 }
 
-imu_data_t* testdata;
+/*imu_data_t* testdata;
 int main(){
 	read_accel_data(testdata);
 	printf("%ld %ld %ld\n", testdata->accel[0], testdata->accel[1], testdata->accel[2]);
-}
+}*/

@@ -3,7 +3,7 @@
 #include "sensor_config.h"
 
 
-enum state_t current_state = UNINITIALIZED;
+state_t state = UNINITIALIZED;
 
 /*******************************************************************************
 * @ state_t get_state()

@@ -70,10 +70,10 @@ int initialize_spi1(int mode, int speed_hz){
 	}if(gpio_set_dir(SPI1_SS2_GPIO_PIN, OUTPUT_PIN)){
 		printf("ERROR: can't set direction gpio %d\n", SPI1_SS2_GPIO_PIN);
 		return -1;
-	}if(mmap_gpio_write(SPI1_SS1_GPIO_PIN, HIGH)){
+	}if(gpio_set_value(SPI1_SS1_GPIO_PIN, HIGH)){
 		printf("ERROR: can't write to gpio %d\n", SPI1_SS1_GPIO_PIN);
 		return -1;
-	}if(mmap_gpio_write(SPI1_SS2_GPIO_PIN, HIGH)){
+	}if(gpio_set_value(SPI1_SS2_GPIO_PIN, HIGH)){
 		printf("ERROR: can't write to gpio %d\n", SPI1_SS2_GPIO_PIN);
 		return -1;
 	}
@@ -163,12 +163,12 @@ int close_spi1(){
 int select_spi1_slave(int slave){
 	switch(slave){
 		case 1:
-			mmap_gpio_write(SPI1_SS2_GPIO_PIN, HIGH);
-			mmap_gpio_write(SPI1_SS1_GPIO_PIN, LOW);
+			gpio_set_value(SPI1_SS2_GPIO_PIN, HIGH);
+			gpio_set_value(SPI1_SS1_GPIO_PIN, LOW);
 			break;
 		case 2:
-			mmap_gpio_write(SPI1_SS1_GPIO_PIN, HIGH);
-			mmap_gpio_write(SPI1_SS2_GPIO_PIN, LOW);
+			gpio_set_value(SPI1_SS1_GPIO_PIN, HIGH);
+			gpio_set_value(SPI1_SS2_GPIO_PIN, LOW);
 			break;
 		default:
 			printf("SPI slave number must be 1 or 2\n");
@@ -187,10 +187,10 @@ int select_spi1_slave(int slave){
 int deselect_spi1_slave(int slave){
 	switch(slave){
 		case 1:
-			mmap_gpio_write(SPI1_SS1_GPIO_PIN, HIGH);
+			gpio_set_value(SPI1_SS1_GPIO_PIN, HIGH);
 			break;
 		case 2:
-			mmap_gpio_write(SPI1_SS2_GPIO_PIN, HIGH);
+			gpio_set_value(SPI1_SS2_GPIO_PIN, HIGH);
 			break;
 		default:
 			printf("SPI slave number must be 1 or 2\n");

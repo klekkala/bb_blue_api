@@ -47,7 +47,7 @@ pthread_t mode_released_thread;
 
 
 
-int initialize_led_handlers(){
+void initialize_led_handlers(){
 	// initialize io libs
 	printf("Initializing: ");
 	printf("GPIO");
