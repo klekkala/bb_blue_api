@@ -7,11 +7,11 @@ state_t state = UNINITIALIZED;
 
 
 /*******************************************************************************
-* int initialize_cape()
+* int initialize_board()
 * sets up necessary hardware and software
 * should be the first thing your program calls
 *******************************************************************************/
-int initialize_cape(){
+int initialize_board(){
 	FILE *fd; 	
 	int ret;
 
@@ -27,7 +27,7 @@ int initialize_cape(){
 		int old_pid;
 		fscanf(fd,"%d", &old_pid);
 		if(old_pid != 0){
-			printf("warning, shutting down existing robotics project\n");
+			printf("warning, shutting down any existing BB Blue APIs\n");
 			kill((pid_t)old_pid, SIGINT);
 			sleep(1);
 		}
@@ -91,14 +91,14 @@ int initialize_cape(){
 	gpio_export(SERVO_PWR);
 	gpio_set_dir(SERVO_PWR, OUTPUT_PIN);
 	
-	if(initialize_mmap_gpio()){
+	if(initialize_gpio()){
 		printf("mmap_gpio_adc.c failed to initialize gpio\n");
 		return -1;
 	}
 	
 	printf(" ADC");
 	fflush(stdout);
-	if(initialize_mmap_adc()){
+	if(initialize_adc()){
 		printf("mmap_gpio_adc.c failed to initialize adc\n");
 		return -1;
 	}

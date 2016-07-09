@@ -37,8 +37,8 @@ typedef struct timeval timeval;
 * All example programs use these functions. See the bare_minimum example 
 * for a skeleton outline.
 *******************************************************************************/
-int initialize_cape();
-int cleanup_cape();		// call at the very end of main()
+int initialize_board();
+int cleanup_board();		// call at the very end of main()
 
 
 /*******************************************************************************
@@ -1167,8 +1167,8 @@ int print_cpu_frequency();
 // This relies on a device tree overlay enabling hrpwm 
 
 
-int init_pwm(int subsystem, int frequency);
-int uninit_pwm(int subsystem);
+int initialize_pwm(int subsystem, int frequency);
+int uninitialize_pwm(int subsystem);
 int set_pwm_duty(int subsystem, char ch, float duty);
 int set_pwm_duty_ns(int subsystem, char ch, int duty_ns);
 
