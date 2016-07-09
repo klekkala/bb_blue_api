@@ -10,30 +10,9 @@
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/pinctrl/am33xx.h>
 
-fragment@0 {
-	target = <&am33xx_pinmux>;
-	__overlay__ {
-		/****************************************
-		* 			pinmux helper				
-		****************************************/
-		mux_helper_pins: pins {
-			pinctrl-single,pins = <
-			
-			/* EQEP */
-			0x1A0 0x31  /* P9_42,EQEP0A, MODE1 */       
-			0x1A4 0x31  /* P9_27,EQEP0B, MODE1 */  
-			0x0D4 0x32  /* P8_33,EQEP1B, MODE2 */
-			0x0D0 0x32  /* P8_35,EQEP1A, MODE2 */
-			0x030 0x3C  /* P8_12,EQEP2A_in, MODE4 */
-			0x034 0x3C  /* P8_11,EQEP2B_in, MODE4 */
-			
-			/* PRU encoder input */
-			0x03c 0x36	/* P8_15,PRU0_r31_15,MODE6 */
-			0x038 0x36	/* P8_16,PRU0_r31_16,MODE6 */
-			>;
-			
-	};
-};
+/dts-v1/;
+/plugin/; 
+
 / {
 	compatible = "ti,beaglebone-black";
 
@@ -44,29 +23,46 @@ fragment@0 {
 	// resources this cape uses
 	exclusive-use =
 		/* EQEP */
-			0x1A0 0x31  /* P9_42,EQEP0A, MODE1 */       
-			0x1A4 0x31  /* P9_27,EQEP0B, MODE1 */  
-			0x0D4 0x32  /* P8_33,EQEP1B, MODE2 */
-			0x0D0 0x32  /* P8_35,EQEP1A, MODE2 */
-			0x030 0x3C  /* P8_12,EQEP2A_in, MODE4 */
-			0x034 0x3C  /* P8_11,EQEP2B_in, MODE4 */
+
+			"P8.11",	/*QEP_2B*/
+			"P8.12",	/*QEP_2A*/
+			"P8.33",	/*QEP_1B*/
+			"P8.35",	/*QEP_1A*/
+			"P9.27",	/*QEP_0B*/
+			"P9.42",	/*QEP_0A*/
+			"P8.15",	/*PRU_ENCODER_B*/
+			"P8.16",	/*PRU_ENCODER_A*/
+
+
+			"eqep0",
+			"eqep1",
+			"eqep2",
 
 	fragment@0 {
 		target = <&am33xx_pinmux>;
 		__overlay__ {
 			pinctrl_eqep0: pinctrl_eqep0_pins {
 				pinctrl-single,pins = <
-					BONE_P9_42B (PIN_INPUT | MUX_MODE1)	// GPIO3_18 = EQEP0A_in
-					BONE_P9_27  (PIN_INPUT | MUX_MODE1)	// GPIO3_19 = EQEP0B_in
-					BONE_P9_41B (PIN_INPUT | MUX_MODE1)	// GPIO3_20 = EQEP0_index
-					BONE_P9_25  (PIN_INPUT | MUX_MODE1)	// GPIO3_21 = EQEP0_strobe
+					/* EQEP */
+				0x1A0 0x31  /* P9_42,EQEP0A, MODE1 */       
+				0x1A4 0x31  /* P9_27,EQEP0B, MODE1 */  
+				0x0D4 0x32  /* P8_33,EQEP1B, MODE2 */
+				0x0D0 0x32  /* P8_35,EQEP1A, MODE2 */
+				0x030 0x34  /* P8_12,EQEP2A_in, MODE4 */
+				0x034 0x34  /* P8_11,EQEP2B_in, MODE4 */
+
+				/* PRU encoder input */
+				0x03c 0x36	/* P8_15,PRU0_r31_15,MODE6 */ 
+				0x038 0x36	/* P8_16,PRU0_r31_16,MODE6 */
 				>;
 			};
 		};
 	};
 
-
-		fragment@2 {
+/****************************************
+ 		PWMSS			
+****************************************/	
+fragment@2 {
 	target = <&epwmss0>;
 	__overlay__ {
 		status = "okay";
@@ -86,7 +82,6 @@ fragment@4 {
 		status = "okay";
 	};
 };
-
 
 
 fragment@8 {
