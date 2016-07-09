@@ -1167,8 +1167,8 @@ int print_cpu_frequency();
 // This relies on a device tree overlay enabling hrpwm 
 
 
-int initialize_pwm(int subsystem, int frequency);
-int uninitialize_pwm(int subsystem);
+int init_pwm(int subsystem, int frequency);
+int uninit_pwm(int subsystem);
 int set_pwm_duty(int subsystem, char ch, float duty);
 int set_pwm_duty_ns(int subsystem, char ch, int duty_ns);
 

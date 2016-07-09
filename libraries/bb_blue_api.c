@@ -91,17 +91,7 @@ int initialize_board(){
 	gpio_export(SERVO_PWR);
 	gpio_set_dir(SERVO_PWR, OUTPUT_PIN);
 	
-	if(initialize_gpio()){
-		printf("mmap_gpio_adc.c failed to initialize gpio\n");
-		return -1;
-	}
-	
-	printf(" ADC");
-	fflush(stdout);
-	if(initialize_adc()){
-		printf("mmap_gpio_adc.c failed to initialize adc\n");
-		return -1;
-	}
+
 	printf(" eQEP");
 	fflush(stdout);
 	if(init_eqep(0)){
@@ -120,11 +110,11 @@ int initialize_board(){
 	// setup pwm driver
 	printf(" PWM");
 	fflush(stdout);
-	if(simple_init_pwm(1,PWM_FREQ)){
+	if(init_pwm(1,PWM_FREQ)){
 		printf("simple_pwm.c failed to initialize PWMSS 0\n");
 		return -1;
 	}
-	if(simple_init_pwm(2,PWM_FREQ)){
+	if(init_pwm(2,PWM_FREQ)){
 		printf("simple_pwm.c failed to initialize PWMSS 1\n");
 		return -1;
 	}
@@ -177,7 +167,7 @@ int initialize_board(){
 *	shuts down library and hardware functions cleanly
 *	you should call this before your main() function returns
 *******************************************************************************/
-int cleanup_cape(){
+int cleanup_board(){
 	// just in case the user forgot, set state to exiting
 	set_state(EXITING);
 	
