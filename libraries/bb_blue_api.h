@@ -1175,6 +1175,7 @@ int set_pwm_duty_ns(int subsystem, char ch, int duty_ns);
 // eQEP functions
 
 int init_eqep(int ss, int mode);
+int is_init_eqep(int ss);
 //int set_period(int ss, int period_val)
 int read_eqep(int ch);
 int write_eqep(int ch, int val);

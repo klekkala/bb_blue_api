@@ -1,16 +1,3 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <errno.h>
-#include <unistd.h>
-#include <fcntl.h>
-#include <poll.h>
-
-#include "bb_blue_api.h"
-#include "sensor_config.h"
-#include "useful_includes.h"
-
-
 /*
 Copyright (c) 2014, James Strawson
 All rights reserved.
@@ -39,6 +26,8 @@ either expressed or implied, of the FreeBSD Project.
 //#define DEBUG
 
 #include "bb_blue_api.h"
+#include "sensor_config.h"
+#include "useful_includes.h"
 #include "tipwmss.h"
 
 #include <stdio.h>
@@ -58,105 +47,6 @@ int pwmss_mapped[3] = {0,0,0}; // to record which subsystems have been mapped
 int eqep_initialized[3] = {0,0,0};
 int pwm_initialized[3] = {0,0,0};
 
-/********************************************
-*  PWMSS Mapping
-*********************************************/
-// maps the base of each PWM subsystem into an array
-// this is used by eQEP and PWM
-// returns immediately if this has already been done 
-int map_pwmss(int ss){
-	if(ss>2 || ss<0){
-		printf("error: PWM subsystem must be 0, 1, or 2\n");
-		return -1;
-	}
-	//return 0 if it's already been mapped.
-	if(pwmss_mapped[ss]){
-		return 0;
-	}
-	
-	//open /dev/mem file pointer for mmap
-	#ifdef DEBUG
-		printf("opening /dev/mem\n");
-	#endif
-	int dev_mem;
-	if ((dev_mem = open("/dev/mem", O_RDWR | O_SYNC))==-1){
-	  printf("Could not open /dev/mem \n");
-	  return -1;
-	}
-	
-	// first open the clock register to see if the PWMSS has clock enabled
-	if(!cm_per_mapped){
-		#ifdef DEBUG
-		printf("mapping CM_PER\n");
-		#endif
-		cm_per_base=mmap(0,CM_PER_PAGE_SIZE,PROT_READ|PROT_WRITE,MAP_SHARED,dev_mem,CM_PER);
-		if(cm_per_base == (void *) -1) {
-			printf("Unable to mmap cm_per\n");
-			return -1;
-		}
-		cm_per_mapped = 1;
-	}
-	
-	// if this subsystem hasn't already been mapped, 
-	// then we probably need to enable clock signal to it in cm_per
-	uint32_t cm_per_clkctrl;
-	switch(ss){
-	case 0:
-		cm_per_clkctrl = CM_PER_EPWMSS0_CLKCTRL;
-		break;
-	case 1:
-		cm_per_clkctrl = CM_PER_EPWMSS1_CLKCTRL;
-		break;
-	case 2:
-		cm_per_clkctrl = CM_PER_EPWMSS2_CLKCTRL;
-		break;
-	default:
-		return -1;
-	}
-	
-	*(uint16_t*)(cm_per_base + cm_per_clkctrl) |= MODULEMODE_ENABLE;
-	#ifdef DEBUG
-	printf("new clkctrl%d: %d\n", ss, *(uint16_t*)(cm_per_base + cm_per_clkctrl));
-	#endif
-
-	
-	// now map the appropriate subsystem base address
-	#ifdef DEBUG
-		printf("calling mmap() for base %d\n", ss);
-	#endif
-	switch(ss){
-	case 0:
-		pwm_base[0] = mmap(0,PWMSS_MEM_SIZE,PROT_READ|PROT_WRITE,MAP_SHARED,dev_mem,PWMSS0_BASE);
-		break;
-	case 1:
-		pwm_base[1] = mmap(0,PWMSS_MEM_SIZE,PROT_READ|PROT_WRITE,MAP_SHARED,dev_mem,PWMSS1_BASE);
-		break;
-	case 2:
-		pwm_base[2] = mmap(0,PWMSS_MEM_SIZE,PROT_READ|PROT_WRITE,MAP_SHARED,dev_mem,PWMSS2_BASE);
-		break;
-	default:
-		printf("invalid ss\n");
-		return -1;
-	}
-	#ifdef DEBUG
-		printf("finished mapping for base %d\n", ss);
-	#endif
-	
-	if(pwm_base[ss] == (void *) -1) {
-		printf("Unable to mmap pwm \n");
-		return -1;
-	}
-	pwmss_mapped[ss]=1;
-	
-	// enable clock from PWMSS
-	*(uint32_t*)(pwm_base[ss]+PWMSS_CLKCONFIG) |= 0x010;
-	
-	close(dev_mem);
-	#ifdef DEBUG
-		printf("closed /dev/mem\n");
-	#endif
-	return 0;
-}
 
 /********************************************
 *  eQEP
@@ -164,8 +54,31 @@ int map_pwmss(int ss){
 
 // init_eqep takes care of sanity checks and returns quickly
 // if nothing is to be initialized.
-int init_eqep(int ss){
+int init_eqep(int ss, int mode){
 	// range sanity check
+	if(ss>2 || ss<0){
+		printf("error: PWM subsystem must be 0, 1, or 2\n");
+		return -1;
+	}
+
+	int fd;
+	char buf[MAX_BUF];
+	snprintf(buf, sizeof(buf), SYSFS_EQEP_DIR"/%d/mode", ss);
+	fd = open(buf, O_WRONLY);
+
+	if (fd < 0) {
+		perror("writing value to the channel failed.");
+		return fd;
+	}
+
+	write(fd, &mode, 4);
+	close(fd);
+
+	eqep_initialized[ss] = 1;
+	return 0;
+}
+
+int is_eqep_init(int ss){
 	if(ss>2 || ss<0){
 		printf("error: PWM subsystem must be 0, 1, or 2\n");
 		return -1;
@@ -174,18 +87,19 @@ int init_eqep(int ss){
 	if(eqep_initialized[ss]){
 		return 0;
 	}
-
-	eqep_initialized[ss] = 1;
-	return 0;
+	
+	else{
+		return 1;
+	}
 }
 
 // read a value from eQEP counter
 int read_eqep(int ch){
-	if(init_eqep(ch)) return -1;
+	if(is_init_eqep(ch)) return -1;
 	int fd;
 	char buf[MAX_BUF];
 
-	snprintf(buf, sizeof(buf), SYSFS_EQEP_DIR/"%d/position", ch);
+	snprintf(buf, sizeof(buf), SYSFS_EQEP_DIR"/%d/position", ch);
 
 	fd = open(buf, O_RDONLY);
 	if (fd < 0) {
@@ -200,10 +114,10 @@ int read_eqep(int ch){
 
 // write a value to the eQEP counter
 int write_eqep(int ch, int val){
-	if(init_eqep(ch)) return -1;
+	if(is_init_eqep(ch)) return -1;
 	int fd;
 	char buf[MAX_BUF];
-	snprintf(buf, sizeof(buf), SYSFS_EQEP_DIR/"%d/position", ch);
+	snprintf(buf, sizeof(buf), SYSFS_EQEP_DIR"/%d/position", ch);
 	fd = open(buf, O_WRONLY);
 
 	if (fd < 0) {
@@ -230,7 +144,7 @@ int get_encoder_pos(int ch){
 	}
 	// 4th channel is counted by the PRU not eQEP
 	if(ch==4){
-		return (int) prusharedMem_32int_ptr[8];
+		//return (int) prusharedMem_32int_ptr[8];
 	}
 	
 	// first 3 channels counted by eQEP
@@ -250,7 +164,7 @@ int set_encoder_pos(int ch, int val){
 	}
 	// 4th channel is counted by the PRU not eQEP
 	if(ch==4){
-		prusharedMem_32int_ptr[8] = val;
+		//prusharedMem_32int_ptr[8] = val;
 		return 0;
 	}
 	// else write to eQEP
