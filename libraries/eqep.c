@@ -38,7 +38,7 @@ either expressed or implied, of the FreeBSD Project.
 
 //#define DEBUG
 
-#include "mmap_pwmss.h"
+#include "bb_blue_api.h"
 #include "tipwmss.h"
 
 #include <stdio.h>
@@ -174,37 +174,7 @@ int init_eqep(int ss){
 	if(eqep_initialized[ss]){
 		return 0;
 	}
-	// make sure the subsystem is mapped
-	if(map_pwmss(ss)){
-		printf("failed to map PWMSS %d\n", ss);
-		return -1;
-	}
-	#ifdef DEBUG
-		printf("setting eqep ctrl registers\n");
-	#endif
-	//turn off clock to eqep
-	*(uint32_t*)(pwm_base[ss]+PWMSS_CLKCONFIG) &= ~PWMSS_EQEPCLK_EN;
-	// Write the decoder control settings
-	*(uint16_t*)(pwm_base[ss]+EQEP_OFFSET+QDECCTL) = 0;
-	// set maximum position to two's compliment of -1, aka UINT_MAX
-	*(uint32_t*)(pwm_base[ss]+EQEP_OFFSET+QPOSMAX)=-1;
-	// Enable interrupt
-	*(uint16_t*)(pwm_base[ss]+EQEP_OFFSET+QEINT) = UTOF;
-	// set unit period register
-	*(uint32_t*)(pwm_base[ss]+EQEP_OFFSET+QUPRD)=0x5F5E100;
-	// enable counter in control register
-	*(uint16_t*)(pwm_base[ss]+EQEP_OFFSET+QEPCTL) = PHEN|IEL0|SWI|UTE|QCLM;
-	//enable clock from PWMSS
-	*(uint32_t*)(pwm_base[ss]+PWMSS_CLKCONFIG) |= PWMSS_EQEPCLK_EN;
-	
-	// Test eqep by resetting position
-	#ifdef DEBUG
-		printf("testing eQEP write\n");
-	#endif
-	*(uint32_t*)(pwm_base[ss] + EQEP_OFFSET +QPOSCNT) = 0;
-	#ifdef DEBUG
-		printf("successfully tested eQEP write\n");
-	#endif
+
 	eqep_initialized[ss] = 1;
 	return 0;
 }
@@ -212,59 +182,38 @@ int init_eqep(int ss){
 // read a value from eQEP counter
 int read_eqep(int ch){
 	if(init_eqep(ch)) return -1;
-	return  *(int*)(pwm_base[ch] + EQEP_OFFSET +QPOSCNT);
+	int fd;
+	char buf[MAX_BUF];
+
+	snprintf(buf, sizeof(buf), SYSFS_EQEP_DIR/"%d/position", ch);
+
+	fd = open(buf, O_RDONLY);
+	if (fd < 0) {
+		perror("counter reading error");
+		return fd;
+	}
+
+	read(fd, &ch, 4);
+	close(fd);
+	return ch;
 }
 
 // write a value to the eQEP counter
 int write_eqep(int ch, int val){
 	if(init_eqep(ch)) return -1;
-	*(int*)(pwm_base[ch] + EQEP_OFFSET +QPOSCNT) = val;
-	return 0;
-}
+	int fd;
+	char buf[MAX_BUF];
+	snprintf(buf, sizeof(buf), SYSFS_EQEP_DIR/"%d/position", ch);
+	fd = open(buf, O_WRONLY);
 
-/****************************************************************
-* PWM
-* Due to conflicts with the linux driver the only available
-* mmap function for PWM is to set the duty cycle. Setup
-* must be done through /sys/class/pwm or with simple_pwm.c
-*****************************************************************/
+	if (fd < 0) {
+		perror("writing value to the channel failed. May be absolute mode set?");
+		return fd;
+	}
 
-// set duty cycle for either channel A or B in a given subsystem
-// input channel is a character 'A' or 'B'
-int set_pwm_duty(int ss, char ch, float duty){
-	// make sure the subsystem is mapped
-	if(map_pwmss(ss)){
-		printf("failed to map PWMSS %d\n", ss);
-		return -1;
-	}
-	//sanity check duty
-	if(duty>1.0 || duty<0.0){
-		printf("duty must be between 0.0 & 1.0\n");
-		return -1;
-	}
-	
-	// duty ranges from 0 to TBPRD+1 for 0-100% PWM duty
-	uint16_t period = *(uint16_t*)(pwm_base[ss]+PWM_OFFSET+TBPRD);
-	uint16_t new_duty = (uint16_t)lroundf(duty * (period+1));
-	
-	#ifdef DEBUG
-		printf("period : %d\n", period);
-		printf("new_duty : %d\n", new_duty);
-	#endif
-	
-	// change appropriate compare register
-	switch(ch){
-	case 'A':
-		*(uint16_t*)(pwm_base[ss]+PWM_OFFSET+CMPA) = new_duty;
-		break;
-	case 'B':
-		*(uint16_t*)(pwm_base[ss]+PWM_OFFSET+CMPB) = new_duty;
-		break;
-	default:
-		printf("pwm channel must be 'A' or 'B'\n");
-		return -1;
-	}
-	
+	write(fd, &val, 4);
+
+	close(fd);
 	return 0;
 }
 
