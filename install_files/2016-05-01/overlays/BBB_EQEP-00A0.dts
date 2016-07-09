@@ -29,7 +29,7 @@
 
 			"eqep0",
 			"eqep1",
-			"eqep2",
+			"eqep2";
 
 	fragment@0 {
 		target = <&am33xx_pinmux>;
