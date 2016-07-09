@@ -5,6 +5,257 @@
 
 state_t state = UNINITIALIZED;
 
+
+/*******************************************************************************
+* int initialize_cape()
+* sets up necessary hardware and software
+* should be the first thing your program calls
+*******************************************************************************/
+int initialize_cape(){
+	FILE *fd; 	
+	int ret;
+
+	printf("\n");
+
+	// check if another project was using resources
+	// kill that process cleanly with sigint if so
+	#ifdef DEBUG
+		printf("checking for existing PID_FILE\n");
+	#endif
+	fd = fopen(PID_FILE, "r");
+	if (fd != NULL) {
+		int old_pid;
+		fscanf(fd,"%d", &old_pid);
+		if(old_pid != 0){
+			printf("warning, shutting down existing robotics project\n");
+			kill((pid_t)old_pid, SIGINT);
+			sleep(1);
+		}
+		// close and delete the old file
+		fclose(fd);
+		remove(PID_FILE);
+	}
+	
+	// create new pid file with process id
+	#ifdef DEBUG
+		printf("opening PID_FILE\n");
+	#endif
+	fd = fopen(PID_FILE, "ab+");
+	if (fd < 0) {
+		printf("\n error opening PID_FILE for writing\n");
+		return -1;
+	}
+	pid_t current_pid = getpid();
+	fprintf(fd,"%d",(int)current_pid);
+	fflush(fd);
+	fclose(fd);
+	
+	// check the device tree overlay is actually loaded
+	if (is_cape_loaded() != 1){
+		printf("ERROR: Device tree overlay not loaded by cape manager\n");
+		return -1;
+	}
+	
+	// initialize mmap io libs
+	printf("Initializing: ");
+	printf("GPIO");
+	fflush(stdout);
+
+	//export all GPIO output pins
+	gpio_export(RED_LED);
+	gpio_set_dir(RED_LED, OUTPUT_PIN);
+	gpio_export(GRN_LED);
+	gpio_set_dir(GRN_LED, OUTPUT_PIN);
+	gpio_export(MDIR1A);
+	gpio_set_dir(MDIR1A, OUTPUT_PIN);
+	gpio_export(MDIR1B);
+	gpio_set_dir(MDIR1B, OUTPUT_PIN);
+	gpio_export(MDIR2A);
+	gpio_set_dir(MDIR2A, OUTPUT_PIN);
+	gpio_export(MDIR2B);
+	gpio_set_dir(MDIR2B, OUTPUT_PIN);
+	gpio_export(MDIR3A);
+	gpio_set_dir(MDIR3A, OUTPUT_PIN);
+	gpio_export(MDIR3B);
+	gpio_set_dir(MDIR3B, OUTPUT_PIN);
+	gpio_export(MDIR4A);
+	gpio_set_dir(MDIR4A, OUTPUT_PIN);
+	gpio_export(MDIR4B);
+	gpio_set_dir(MDIR4B, OUTPUT_PIN);
+	gpio_export(MOT_STBY);
+	gpio_set_dir(MOT_STBY, OUTPUT_PIN);
+	gpio_export(PAIRING_PIN);
+	gpio_set_dir(PAIRING_PIN, OUTPUT_PIN);
+	gpio_export(INTERRUPT_PIN);
+	gpio_set_dir(INTERRUPT_PIN, INPUT_PIN);
+	gpio_export(SERVO_PWR);
+	gpio_set_dir(SERVO_PWR, OUTPUT_PIN);
+	
+	if(initialize_mmap_gpio()){
+		printf("mmap_gpio_adc.c failed to initialize gpio\n");
+		return -1;
+	}
+	
+	printf(" ADC");
+	fflush(stdout);
+	if(initialize_mmap_adc()){
+		printf("mmap_gpio_adc.c failed to initialize adc\n");
+		return -1;
+	}
+	printf(" eQEP");
+	fflush(stdout);
+	if(init_eqep(0)){
+		printf("mmap_pwmss.c failed to initialize eQEP\n");
+		return -1;
+	}
+	if(init_eqep(1)){
+		printf("mmap_pwmss.c failed to initialize eQEP\n");
+		return -1;
+	}
+	if(init_eqep(2)){
+		printf("mmap_pwmss.c failed to initialize eQEP\n");
+		return -1;
+	}
+	
+	// setup pwm driver
+	printf(" PWM");
+	fflush(stdout);
+	if(simple_init_pwm(1,PWM_FREQ)){
+		printf("simple_pwm.c failed to initialize PWMSS 0\n");
+		return -1;
+	}
+	if(simple_init_pwm(2,PWM_FREQ)){
+		printf("simple_pwm.c failed to initialize PWMSS 1\n");
+		return -1;
+	}
+	
+	// start some gpio pins at defaults
+	deselect_spi1_slave(1);	
+	deselect_spi1_slave(2);
+	disable_motors();
+	
+	//set up function pointers for button press events
+	printf(" Buttons");
+	fflush(stdout);
+	initialize_button_handlers();
+	
+	// Load binary into PRU
+	printf(" PRU\n");
+	fflush(stdout);
+#ifdef DEBUG  	// if in debug mode print everything
+	ret=initialize_pru();
+#else  // otherwise supress the annoying prints
+	ret=suppress_stderr(&initialize_pru); 
+#endif
+	if(ret<0){
+		printf("ERROR: PRU init FAILED\n");
+		pru_initialized = 0;
+		return -1;
+	}
+	pru_initialized=1;
+		
+	// Start Signal Handler
+	#ifdef DEBUG
+	printf("Initializing exit signal handler\n");
+	#endif
+	signal(SIGINT, shutdown_signal_handler);	
+	signal(SIGTERM, shutdown_signal_handler);	
+	
+	// Print current battery voltage
+	printf("Battery: %2.2fV  ", get_battery_voltage());
+	printf("Process ID: %d\n", (int)current_pid);
+
+	// all done
+	set_state(PAUSED);
+	printf("Robotics Cape Initialized\n\n");
+
+	return 0;
+}
+
+/*******************************************************************************
+*	int cleanup_cape()
+*	shuts down library and hardware functions cleanly
+*	you should call this before your main() function returns
+*******************************************************************************/
+int cleanup_cape(){
+	// just in case the user forgot, set state to exiting
+	set_state(EXITING);
+	
+	// announce we are starting cleanup process
+	printf("\nExiting Cleanly\n");
+	
+	//allow up to 3 seconds for thread cleanup
+	struct timespec thread_timeout;
+	clock_gettime(CLOCK_REALTIME, &thread_timeout);
+	thread_timeout.tv_sec += 3;
+	int thread_err = 0;
+	thread_err = pthread_timedjoin_np(pause_pressed_thread, NULL, \
+															&thread_timeout);
+	if(thread_err == ETIMEDOUT){
+		printf("WARNING: pause_pressed_thread exit timeout\n");
+	}
+	thread_err = 0;
+	thread_err = pthread_timedjoin_np(pause_released_thread, NULL, \
+															&thread_timeout);
+	if(thread_err == ETIMEDOUT){
+		printf("WARNING: pause_released_thread exit timeout\n");
+	}
+	thread_err = 0;
+	thread_err = pthread_timedjoin_np(mode_pressed_thread, NULL, \
+															&thread_timeout);
+	if(thread_err == ETIMEDOUT){
+		printf("WARNING: mode_pressed_thread exit timeout\n");
+	}
+	thread_err = 0;
+	thread_err = pthread_timedjoin_np(mode_released_thread, NULL, \
+															&thread_timeout);
+	if(thread_err == ETIMEDOUT){
+		printf("WARNING: mode_released_thread exit timeout\n");
+	}
+	
+	
+	#ifdef DEBUG
+	printf("turning off GPIOs & PWM\n");
+	#endif
+	set_led(GREEN,LOW);
+	set_led(RED,LOW);	
+	disable_motors();
+	deselect_spi1_slave(1);	
+	deselect_spi1_slave(2);	
+	disable_servo_power_rail();
+	
+	
+	#ifdef DEBUG
+	printf("stopping dsm2 service\n");
+	#endif
+	stop_dsm2_service();
+	
+	// only turn off pru if it was enbaled, otherwise segfaults
+	if(pru_initialized){	
+		#ifdef DEBUG
+		printf("turning off PRU\n");
+		#endif
+		prussdrv_pru_disable(0);
+		prussdrv_pru_disable(1);
+		prussdrv_exit();
+	}
+	
+	#ifdef DEBUG
+	printf("deleting PID file\n");
+	#endif
+	FILE* fd;
+	// clean up the pid_file if it still exists
+	fd = fopen(PID_FILE, "r");
+	if (fd != NULL) {
+		// close and delete the old file
+		fclose(fd);
+		remove(PID_FILE);
+	}
+	return 0;
+}
+
+
+
 /*******************************************************************************
 * @ state_t get_state()
 *
