@@ -2,8 +2,9 @@
 #include "bb_blue_api.h"
 #include "sensor_config.h"
 
-
 state_t state = UNINITIALIZED;
+static unsigned int *prusharedMem_32int_ptr;
+int pru_initialized; // set to 1 by initialize_cape, checked by cleanup_cape
 
 
 /*******************************************************************************

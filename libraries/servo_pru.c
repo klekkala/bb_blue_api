@@ -5,11 +5,18 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <poll.h>
+#include <linux/remoteproc.h>
 
 #include "bb_blue_api.h"
 #include "sensor_config.h"
 #include "useful_includes.h"
 
+
+
+struct rproc *rproc_alloc(struct device *dev, const char *name,
+				const struct rproc_ops *ops,
+				const char *firmware, int len);
+/*global declarations*/
 
 /*******************************************************************************
 * int initialize_pru()
@@ -19,15 +26,13 @@
 * servo and encoder functions in this C file.
 *******************************************************************************/
 int initialize_pru(){
+	
+
 	// start pru
-    prussdrv_init();
+    //prussdrv_init();
 	
     // Open PRU Interrupt
-	if(prussdrv_open(PRU_EVTOUT_0)<0){
-        printf("prussdrv_open open failed\n");
-        return -1;
-    }
-    // Get the interrupt initialized
+    /*// Get the interrupt initialized
 	tpruss_intc_initdata pruss_intc_initdata = PRUSS_INTC_INITDATA;
     prussdrv_pruintc_init(&pruss_intc_initdata);
 	// get pointer to PRU shared memory
@@ -37,7 +42,24 @@ int initialize_pru(){
 	memset(prusharedMem_32int_ptr, 0, 9*4);
 	// launch binaries
 	prussdrv_exec_program(SERVO_PRU_NUM, PRU_SERVO_BIN);
-	prussdrv_exec_program(ENCODER_PRU_NUM, PRU_ENCODER_BIN);
+	prussdrv_exec_program(ENCODER_PRU_NUM, PRU_ENCODER_BIN);*/
+
+
+	int ret;
+
+	/* let's power on and boot our remote processor */
+	ret = rproc_boot(rproc_pru);
+	if (ret) {
+		printf("prussdrv boot failed\n");
+        return -1;
+	}
+
+	/*
+	 * our remote processor is now powered on... give it some work
+	 */
+
+	/* let's shut it down now */
+	rproc_shutdown(rproc_pru);
 	
     return 0;
 }
@@ -48,7 +70,7 @@ int initialize_pru(){
 * Turns on the 6V power regulator to the servo power rail.
 *******************************************************************************/
 int enable_servo_power_rail(){
-	return mmap_gpio_write(SERVO_PWR, HIGH);
+	return gpio_set_value(SERVO_PWR, HIGH);
 }
 
 /*******************************************************************************
@@ -57,7 +79,7 @@ int enable_servo_power_rail(){
 * Turns off the 6V power regulator to the servo power rail.
 *******************************************************************************/
 int disable_servo_power_rail(){
-	return mmap_gpio_write(SERVO_PWR, LOW);
+	return gpio_set_value(SERVO_PWR, LOW);
 }
 
 /*******************************************************************************
