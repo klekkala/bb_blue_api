@@ -20,17 +20,6 @@ if [ `whoami` != 'root' ]; then
 	exit
 fi
 
-# check what image and kernel is being used as the install differs
-if grep -q "2015-03-01" /etc/dogtag; then
-	echo "using Debian release 2015-03-01"
-    IMG="2015-03-01"
-elif grep -q "2014-05-14" /etc/dogtag; then
-	echo "using Debian release 2014-05-14"
-	IMG="2014-05-14"
-elif grep -q "2015-11-12" /etc/dogtag; then
-	echo "using Debian release 2015-11-12"
-	IMG="2015-11-12"
-else
 	echo "please use one of the following Debian images"
 	echo "2014-05-14"
 	echo "2015-03-01"
