@@ -13,11 +13,6 @@
 
 
 
-struct rproc *rproc_alloc(struct device *dev, const char *name,
-				const struct rproc_ops *ops,
-				const char *firmware, int len);
-/*global declarations*/
-
 /*******************************************************************************
 * int initialize_pru()
 * 
@@ -93,14 +88,26 @@ int send_servo_pulse_us(int ch, int us){
 	if(ch<1 || ch>SERVO_CHANNELS){
 		printf("ERROR: Servo Channel must be between 1&%d\n", SERVO_CHANNELS);
 		return -1;
-	} if(prusharedMem_32int_ptr == NULL){
-		printf("ERROR: PRU servo Controller not initialized\n");
-		return -1;
 	}
+	
 	// PRU runs at 200Mhz. find #loops needed
 	unsigned int num_loops = ((us*200.0)/PRU_SERVO_LOOP_INSTRUCTIONS); 
 	// write to PRU shared memory
-	prusharedMem_32int_ptr[ch-1] = num_loops;
+	
+	int gpio_set_dir(int gpio, PIN_DIRECTION out_flag)
+	int fd;
+	char buf[MAX_BUF];
+	snprintf(buf, sizeof(buf), "/dev/in_servo%i", gpio);
+	fd = open(buf, O_WRONLY);
+	//printf("%d\n", gpio);
+	if (fd < 0) {
+		perror("gpio/direction");
+		return fd;
+	}
+	
+	write(fd, &num_loops, 4);
+	close(fd);
+	
 	return 0;
 }
 

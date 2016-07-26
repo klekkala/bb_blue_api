@@ -1,0 +1,140 @@
+/*
+ * Device Tree Overlay for Robotics Cape SD-101D
+ * Strawson Design 2015
+ *
+ */
+ 
+/*
+pinmux control byte map courtesy of http://beaglebone.cameon.net/
+Bit 5: 1 - Input, 0 - Output
+Bit 4: 1 - Pull up, 0 - Pull down
+Bit 3: 1 - Pull disabled, 0 - Pull enabled
+Bit 2 \
+Bit 1 |- Mode
+Bit 0 /
+ */
+ 
+/dts-v1/;
+/plugin/; 
+
+/ {
+    compatible = "ti,beaglebone-black";
+
+    /* identification */
+    part-number = "RoboticsCape";
+
+    /* version */
+    version = "00A0";
+	
+	exclusive-use =
+
+		"P8.15",	/*PRU_ENCODER_B*/
+		"P8.16",	/*PRU_ENCODER_A*/
+		"P8.27",	/*SERVO_1*/
+		"P8.28",	/*SERVO_2*/
+		"P8.29",	/*SERVO_3*/
+		"P8.30",	/*SERVO_4*/
+		"P8.36",	/*SERVO_PWR*/
+		"P8.39",	/*SERVO_5*/
+		"P8.40",	/*SERVO_6*/
+		"P8.41",	/*SERVO_7*/
+		"P8.42",	/*SERVO_8*/
+		
+		"servo_sysfs"
+		"pruss",
+		"pru0",
+		"pru1";
+	
+		
+		
+	
+fragment@0 {
+	target = <&am33xx_pinmux>;
+	__overlay__ {
+		/****************************************
+		* 			pinmux helper				
+		****************************************/
+		mux_helper_pins: pins {
+			pinctrl-single,pins = <
+			
+			
+			/* PRU encoder input */
+			0x03c 0x36	/* P8_15,PRU0_r31_15,MODE6 */ 
+			0x038 0x36	/* P8_16,PRU0_r31_16,MODE6 */
+			
+			/* PRU Servo output */
+			0x0e0 0x25	/*pru1_pru_r30_8, MODE5*/
+			0x0e8 0x25	/*pru1_pru_r30_10, MODE5 */
+			0x0e4 0x25	/*pr1_pru1_pru_r30_9, MODE5 */
+			0x0ec 0x25	/*pru1_pru_r30_11, MODE5 */
+			0x0b8 0x25	/*pru1_pru_r30_6, MODE5 */
+			0x0bc 0x25	/*pru1_pru_r30_7, MODE5 */
+			0x0b0 0x25	/*pru1_pru_r30_4, MODE5 */
+			0x0b4 0x25	/*pru1_pru_r30_5, MODE5 */
+			
+			>;
+		};
+			
+	};
+};
+	
+/****************************************
+	Pinmux Helper
+	activates the pinmux helper list of pin modes
+****************************************/
+fragment@1 {
+	target = <&ocp>;
+		__overlay__ {
+			test_helper: helper {
+			compatible = "bone-pinmux-helper";
+			pinctrl-names = "default";
+			pinctrl-0 = <&mux_helper_pins>;
+			status = "okay";
+		};
+	};
+};
+
+
+fragment@5 {
+	target = <&ehrpwm0>;
+	__overlay__ {
+		status = "okay";
+	};
+};
+
+fragment@6 {
+	target = <&ehrpwm1>;
+	__overlay__ {
+		status = "okay";
+	};
+};
+
+fragment@7 {
+	target = <&ehrpwm2>;
+	__overlay__ {
+		status = "okay";
+	};
+};
+
+/****************************************
+ 		PRU			
+****************************************/	
+fragment@31 {
+	target = <&pruss>;
+	__overlay__ {
+		status = "okay";
+	};
+};
+
+/****************************************
+ 		SERVO			
+****************************************/	
+fragment@31 {
+	target = <&servo_sysfs>;
+	__overlay__ {
+		status = "okay";
+	};
+};
+
+	
+};
