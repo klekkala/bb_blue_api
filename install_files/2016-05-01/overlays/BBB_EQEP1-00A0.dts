@@ -12,6 +12,10 @@
 /dts-v1/;
 /plugin/;
 
+#include <dt-bindings/board/am335x-bbw-bbb-base.h>
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/pinctrl/am33xx.h>
+
 / {
 	compatible = "ti,beaglebone-black";
 
