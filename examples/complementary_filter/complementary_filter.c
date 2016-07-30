@@ -1,7 +1,7 @@
 // Complementary Filter for pitch angle estimation about Y axis
 // James Strawson 2014
 
-#include <robotics_cape.h>
+#include <bb_blue_api.h>
 
 #define SAMPLE_RATE_HZ 200	// 200hz
 #define DT 0.005       		// 5ms

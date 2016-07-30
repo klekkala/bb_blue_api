@@ -37,7 +37,7 @@ either expressed or implied, of the FreeBSD Project.
 	drive between 1 and 8. If no argument is given it drives all 8 channels.
 */
 
-#include <robotics_cape.h>
+#include <bb_blue_api.h>
 
 #define FORWARD 1
 #define REVERSE -1

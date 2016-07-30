@@ -6,7 +6,7 @@
 * sensor registers. To use the DMP or interrupt-driven timing see test_dmp.c
 *******************************************************************************/
 #include <useful_includes.h>
-#include <robotics_cape.h>
+#include <bb_blue_api.h>
 
 int main(){
 	imu_data_t data; //struct to hold new data

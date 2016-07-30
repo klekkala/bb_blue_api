@@ -13,7 +13,7 @@
 * channel values.
 *******************************************************************************/
 #include <useful_includes.h>
-#include <robotics_cape.h>
+#include <bb_blue_api.h>
 
 int main(){
 	if(initialize_cape()){

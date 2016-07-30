@@ -20,7 +20,7 @@
 // MI	P9.21
 // SC	P9.22
 
-#include <robotics_cape.h>
+#include <bb_blue_api.h>
 #include <linux/spi/spidev.h>
 #include <sys/ioctl.h>
 

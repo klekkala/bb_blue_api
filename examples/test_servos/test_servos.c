@@ -32,7 +32,7 @@
 * as the BEC function is not needed when using the Robotics Cape.
 *******************************************************************************/
 
-#include <robotics_cape.h>
+#include <bb_blue_api.h>
 #include <useful_includes.h>
 
 typedef enum test_mode_t{

@@ -6,7 +6,7 @@
 * channels 1-3 are counted using eQEP 0-2. Channel 4 is counted by PRU0
 *******************************************************************************/
 
-#include <robotics_cape.h>
+#include <bb_blue_api.h>
 #include <useful_includes.h>
 
 int main(){

@@ -8,7 +8,7 @@
 * in the MISO channel and be read.
 *******************************************************************************/
 
-#include <robotics_cape.h>
+#include <bb_blue_api.h>
 #include <useful_includes.h>
 
 #define SPI_MODE	0
