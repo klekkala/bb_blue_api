@@ -14,6 +14,9 @@
 
 #include <stdint.h> // for uint8_t types etc
 #include <stdio.h>
+#include <pthread.h>    // multi-threading
+
+
 typedef struct timespec	timespec;
 typedef struct timeval timeval;
 
@@ -148,6 +151,10 @@ int blink_led(led_t led, float hz, float period);
 *
 * See the blink example program for sample use case.
 ******************************************************************************/
+
+
+extern int initialize_button_handlers();
+
 typedef enum button_state_t {
 	RELEASED,
 	PRESSED
@@ -158,6 +165,15 @@ int set_mode_pressed_func(int (*func)(void));
 int set_mode_released_func(int (*func)(void));
 button_state_t get_pause_button();
 button_state_t get_mode_button();
+
+
+/*******************************************************************************
+* local thread structs
+*******************************************************************************/
+extern pthread_t pause_pressed_thread;
+extern pthread_t pause_released_thread;
+extern pthread_t mode_pressed_thread;
+extern pthread_t mode_released_thread;
 
 
 /******************************************************************************
@@ -228,9 +244,16 @@ int set_motor_brake_all();
 *
 * See the test_encoders example for sample use case.
 ******************************************************************************/
+
+int init_eqep(int ss, int mode);
+int is_eqep_init(int ss);
+int read_eqep(int ch);
+int write_eqep(int ch, int val);
 int get_encoder_pos(int ch);
 int set_encoder_pos(int ch, int value);
- 
+
+
+
  
 /******************************************************************************
 * ANALOG VOLTAGE SIGNALS

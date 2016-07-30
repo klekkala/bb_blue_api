@@ -98,6 +98,7 @@
 #define SYSFS_BARO_DIR "/sys/bus/iio/devices/iio:device0"
 #define SYSFS_ADC_DIR "/sys/bus/iio/devices/iio:device0"
 #define SYSFS_EQEP_DIR "/sys/devices/ocp.*/48304000.epwmss/48304180.eqep/"
+#define SYSFS_SERVO_DIR "/sys/class/servo"
 
 
 #define SYSFS_GPIO_DIR "/sys/class/gpio"

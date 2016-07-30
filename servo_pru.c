@@ -5,7 +5,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <poll.h>
-#include <linux/remoteproc.h>
+//#include <linux/remoteproc.h>
 
 #include "bb_blue_api.h"
 #include "sensor_config.h"
@@ -97,11 +97,11 @@ int send_servo_pulse_us(int ch, int us){
 	int gpio_set_dir(int gpio, PIN_DIRECTION out_flag)
 	int fd;
 	char buf[MAX_BUF];
-	snprintf(buf, sizeof(buf), "/dev/in_servo%i", gpio);
+	snprintf(buf, sizeof(buf), "SYSFS_SERVO_DIR/in_servo%i/duty_cycle", ch);
 	fd = open(buf, O_WRONLY);
 	//printf("%d\n", gpio);
 	if (fd < 0) {
-		perror("gpio/direction");
+		perror("servo/duty_cycle");
 		return fd;
 	}
 	

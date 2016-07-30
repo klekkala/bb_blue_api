@@ -10,8 +10,7 @@
 #include "bb_blue_api.h"
 #include "sensor_config.h"
 
-// used for setting interrupt input pin
-#include "board_gpio.h" 
+// used for setting interrupt input pin 
 
 // uncomment debug defines to print raw data for debugging
 //#define DEBUG

@@ -3,8 +3,11 @@
 #include "sensor_config.h"
 
 state_t state = UNINITIALIZED;
-static unsigned int *prusharedMem_32int_ptr;
+//static unsigned int *prusharedMem_32int_ptr;
 int pru_initialized; // set to 1 by initialize_cape, checked by cleanup_cape
+void shutdown_signal_handler(int signo);
+int is_cape_loaded();
+
 
 
 /*******************************************************************************
@@ -13,8 +16,7 @@ int pru_initialized; // set to 1 by initialize_cape, checked by cleanup_cape
 * should be the first thing your program calls
 *******************************************************************************/
 int initialize_board(){
-	FILE *fd; 	
-	int ret;
+	FILE *fd;
 
 	printf("\n");
 
@@ -95,15 +97,15 @@ int initialize_board(){
 
 	printf(" eQEP");
 	fflush(stdout);
-	if(init_eqep(0)){
+	if(init_eqep(0, 0)){
 		printf("mmap_pwmss.c failed to initialize eQEP\n");
 		return -1;
 	}
-	if(init_eqep(1)){
+	if(init_eqep(1, 0)){
 		printf("mmap_pwmss.c failed to initialize eQEP\n");
 		return -1;
 	}
-	if(init_eqep(2)){
+	if(init_eqep(2, 0)){
 		printf("mmap_pwmss.c failed to initialize eQEP\n");
 		return -1;
 	}
@@ -133,17 +135,19 @@ int initialize_board(){
 	// Load binary into PRU
 	printf(" PRU\n");
 	fflush(stdout);
-#ifdef DEBUG  	// if in debug mode print everything
+
+/*#ifdef DEBUG  	// if in debug mode print everything
 	ret=initialize_pru();
 #else  // otherwise supress the annoying prints
 	ret=suppress_stderr(&initialize_pru); 
 #endif
+
 	if(ret<0){
 		printf("ERROR: PRU init FAILED\n");
 		pru_initialized = 0;
 		return -1;
 	}
-	pru_initialized=1;
+	pru_initialized=1;*/
 		
 	// Start Signal Handler
 	#ifdef DEBUG
@@ -221,7 +225,7 @@ int cleanup_board(){
 	#endif
 	stop_dsm2_service();
 	
-	// only turn off pru if it was enbaled, otherwise segfaults
+	/* only turn off pru if it was enbaled, otherwise segfaults
 	if(pru_initialized){	
 		#ifdef DEBUG
 		printf("turning off PRU\n");
@@ -229,7 +233,7 @@ int cleanup_board(){
 		prussdrv_pru_disable(0);
 		prussdrv_pru_disable(1);
 		prussdrv_exit();
-	}
+	}*/
 	
 	#ifdef DEBUG
 	printf("deleting PID file\n");
@@ -293,4 +297,124 @@ int print_state(){
 		return -1;
 	}
 	return 0;
+}
+
+/*******************************************************************************
+* shutdown_signal_handler(int signo)
+*
+* catch Ctrl-C signal and change system state to EXITING
+* all threads should watch for get_state()==EXITING and shut down cleanly
+*******************************************************************************/
+void shutdown_signal_handler(int signo){
+	if (signo == SIGINT){
+		set_state(EXITING);
+		printf("\nreceived SIGINT Ctrl-C\n");
+ 	}else if (signo == SIGTERM){
+		set_state(EXITING);
+		printf("\nreceived SIGTERM\n");
+ 	}
+}
+
+
+/*******************************************************************************
+*	is_cape_loaded()
+*
+*	check to make sure robotics cape overlay is loaded
+*	return 1 if cape is loaded
+*	return -1 if cape_mgr is missing
+* 	return 0 if mape_mgr is present but cape is missing
+*******************************************************************************/
+int is_cape_loaded(){
+	int ret;
+	
+	// first check if the old (Wheezy) location of capemanager exists
+	if(system("ls /sys/devices/ | grep -q \"bone_capemgr\"")==0){
+		#ifdef DEBUG
+		printf("checking /sys/devices/bone_capemgr*/slots\n");
+		#endif
+		ret = system("grep -q "CAPE_NAME" /sys/devices/bone_capemgr*/slots");
+	}
+	else if(system("ls /sys/devices/platform/ | grep -q \"bone_capemgr\"")==0){
+		#ifdef DEBUG
+		printf("checking /sys/devices/platform/bone_capemgr*/slots\n");
+		#endif
+		ret = system("grep -q "CAPE_NAME" /sys/devices/platform/bone_capemgr*/slots");
+	}
+	else{
+		printf("Cannot find bone_capemgr*/slots\n");
+		return -1;
+	}
+	
+	if(ret == 0){
+		#ifdef DEBUG
+		printf("Cape Loaded\n");
+		#endif
+		return 1;
+	} 
+	
+	#ifdef DEBUG
+	printf("Cape NOT Loaded\n");
+	printf("grep returned %d\n", ret);
+	#endif
+	
+	return 0;
+}
+
+
+/*******************************************************************************
+* @ int kill_robot()
+*
+* This function is used by initialize_cape to make sure any existing program
+* using the robotics cape lib is stopped. The user doesn't need to integrate
+* this in their own program as initialize_cape calls it. However, the user may
+* call the kill_robot example program from the command line to close whatever
+* program is running in the background.
+*
+* return values: 
+* -2 : invalid contents in PID_FILE
+* -1 : existing project failed to close cleanly and had to be killed
+*  0 : No existing program is running
+*  1 : An existing program was running but it shut down cleanly.
+*******************************************************************************/
+int kill_robot(){
+	FILE* fd;
+	int old_pid, i;
+	
+	// attempt to open PID file
+	fd = fopen(PID_FILE, "r");
+	// if the file didn't open, no proejct is runnning in the background
+	// so return 0
+	if (fd == NULL) {
+		return 0;
+	}
+	
+	// otherwise try to read the current process ID
+	fscanf(fd,"%d", &old_pid);
+	fclose(fd);
+	
+	// if the file didn't contain a PID number, remove it and 
+	// return -1 indicating weird behavior
+	if(old_pid == 0){
+		remove(PID_FILE);
+		return -2;
+	}
+		
+	// attempt a clean shutdown
+	kill((pid_t)old_pid, SIGINT);
+	
+	// check every 0.1 seconds to see if it closed 
+	for(i=0; i<30; i++){
+		if(access(PID_FILE, F_OK ) != -1) usleep(100000);
+		else return 1; // succcess, it shut down properly
+	}
+	
+	// otherwise force kill the program if the PID file never got cleaned up
+	kill((pid_t)old_pid, SIGKILL);
+
+	// close and delete the old file
+	fclose(fd);
+	remove(PID_FILE);
+	
+	// return -1 indicating the program had to be killed
+	return -1;
 }

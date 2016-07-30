@@ -45,7 +45,7 @@ int cm_per_mapped=0;
 volatile char *pwm_base[3]; // pwm subsystem pointers for eQEP
 int pwmss_mapped[3] = {0,0,0}; // to record which subsystems have been mapped
 int eqep_initialized[3] = {0,0,0};
-int pwm_initialized[3] = {0,0,0};
+//int pwm_initialized[3] = {0,0,0};
 
 
 /********************************************

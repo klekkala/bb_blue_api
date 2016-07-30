@@ -30,7 +30,6 @@ in their projects to clean up what would otherwise be a cluttered list of
 #include <time.h>		// usleep, nanosleep
 #include <math.h>		// atan2 and fabs
 #include <signal.h>		// capture ctrl-c
-#include <pthread.h>    // multi-threading
 #include <linux/input.h>// buttons
 #include <poll.h> 		// interrupt events
 #include <sys/mman.h>	// mmap for accessing eQep
