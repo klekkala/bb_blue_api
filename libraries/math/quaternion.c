@@ -25,7 +25,6 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 *******************************************************************************/
 
 #include "../bb_blue_api.h"
-#include <math.h>
 
 #define VEC3_X		0
 #define VEC3_Y		1

@@ -5,10 +5,6 @@
 *******************************************************************************/
 
 #include "../bb_blue_api.h"
-#include <stdio.h>
-#include <math.h>
-#include <stdlib.h>
-#include <string.h> // for memset
 
 #define PI (float)M_PI
 

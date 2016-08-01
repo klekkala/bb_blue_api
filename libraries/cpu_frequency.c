@@ -7,9 +7,6 @@
 *******************************************************************************/
 
 #include "bb_blue_api.h"
-#include <stdio.h>
-#include <fcntl.h>
-#include <string.h>
 
 #define GOVERNOR_PATH  "/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor"
 #define SETSPEED_PATH  "/sys/devices/system/cpu/cpu0/cpufreq/scaling_setspeed"

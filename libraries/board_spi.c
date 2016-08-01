@@ -6,12 +6,6 @@
 
 #include "bb_blue_api.h"
 #include "sensor_config.h"
-#include <stdint.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h> // for memset
-#include <fcntl.h>
-#include <unistd.h>
 #include <sys/ioctl.h>
 #include <linux/spi/spidev.h>
 

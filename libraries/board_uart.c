@@ -7,7 +7,6 @@
 *******************************************************************************/
 
 #include "bb_blue_api.h"
-#include "useful_includes.h"
 
 #define MIN_BUS 0
 #define MAX_BUS 5

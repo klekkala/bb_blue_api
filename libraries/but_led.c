@@ -5,15 +5,6 @@ Description: Unit testing API for buttons and leds
 //#define DEBUG
 
 #define _GNU_SOURCE 	// to enable macros in pthread
-#include <pthread.h>    // multi-threading
-#include <errno.h>		// pthread error codes
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <errno.h>
-#include <unistd.h>
-#include <fcntl.h>
-#include <poll.h>
 
 #include "bb_blue_api.h"
 #include "sensor_config.h"

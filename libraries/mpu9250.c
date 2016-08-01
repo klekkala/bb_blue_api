@@ -6,7 +6,6 @@
 *******************************************************************************/
 
 #include "bb_blue_api.h"
-#include "useful_includes.h"
 #include "sensor_config.h"
 // #define DEBUG
 #define WARNINGS

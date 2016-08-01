@@ -7,7 +7,7 @@ extra floating point operations done on the main processor.
 
 
 #include "../bb_blue_api.h"
-#include "../useful_includes.h"
+#include "../sensor_config.h"
 
 
 #define Kp 2.0f * 5.0f // these are the free parameters in the Mahony filter and fusion scheme, Kp for proportional feedback, Ki for integral

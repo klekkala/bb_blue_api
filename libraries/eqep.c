@@ -27,18 +27,8 @@ either expressed or implied, of the FreeBSD Project.
 
 #include "bb_blue_api.h"
 #include "sensor_config.h"
-#include "useful_includes.h"
 #include "tipwmss.h"
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <stdint.h>
-#include <sys/mman.h>
-#include <fcntl.h>
-#include <unistd.h>
-#include <math.h>
 
 volatile char *cm_per_base;
 int cm_per_mapped=0;
@@ -95,7 +85,7 @@ int is_eqep_init(int ss){
 
 // read a value from eQEP counter
 int read_eqep(int ch){
-	if(is_init_eqep(ch)) return -1;
+	if(is_eqep_init(ch)) return -1;
 	int fd;
 	char buf[MAX_BUF];
 
@@ -114,7 +104,7 @@ int read_eqep(int ch){
 
 // write a value to the eQEP counter
 int write_eqep(int ch, int val){
-	if(is_init_eqep(ch)) return -1;
+	if(is_eqep_init(ch)) return -1;
 	int fd;
 	char buf[MAX_BUF];
 	snprintf(buf, sizeof(buf), SYSFS_EQEP_DIR"/%d/position", ch);

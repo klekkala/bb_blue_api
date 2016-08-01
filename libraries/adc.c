@@ -2,17 +2,9 @@
 Created: 20 June 2016
 Description: Userspace API for TSC-ADC module in beaglebone black**/
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <errno.h>
-#include <unistd.h>
-#include <fcntl.h>
-#include <poll.h>
 
 #include "bb_blue_api.h"
 #include "sensor_config.h"
-#include "useful_includes.h"
 
 
 int adc_read_raw(int ch){

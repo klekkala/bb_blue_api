@@ -26,11 +26,6 @@ USE OR OTHER DEALINGS IN THE SOFTWARE.
 // #define DEBUG
 
 #include "bb_blue_api.h"
-#include <stdint.h> // for uint8_t types etc
-#include <stdlib.h>
-#include <stdio.h>
-#include <fcntl.h>
-#include <unistd.h>
 #include <sys/ioctl.h>
 #include <linux/i2c-dev.h> //for IOCTL defs
 

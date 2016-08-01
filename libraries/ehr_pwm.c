@@ -29,10 +29,7 @@ either expressed or implied, of the FreeBSD Project.
 
 #include "bb_blue_api.h"
 #include "sensor_config.h"
-#include <stdio.h>
 #include <dirent.h>
-#include <fcntl.h>
-#include <unistd.h>
 
 //#define DEBUG
 #define MAXBUF 64
@@ -260,7 +257,7 @@ int set_motor(int motor, float duty){
 	uint8_t a,b;
 	
 	if(state == UNINITIALIZED){
-		initialize_cape();
+		initialize_board();
 	}
 
 	//check that the duty cycle is within +-1

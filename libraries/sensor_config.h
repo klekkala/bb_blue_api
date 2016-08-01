@@ -9,6 +9,25 @@
 #ifndef ROBOTICS_CAPE_DEFS
 #define ROBOTICS_CAPE_DEFS
 
+
+/*******************************************************************************
+* Useful Constants
+*******************************************************************************/
+#define DEG_TO_RAD 		0.0174532925199
+#define RAD_TO_DEG 	 	57.295779513
+#define PI				(float)M_PI
+#define TWO_PI			(2.0f * (float)M_PI)
+
+/*******************************************************************************
+* Useful Macros
+*******************************************************************************/
+#define ARRAY_SIZE(array) sizeof(array)/sizeof(array[0])
+#define min(a, b) 	((a < b) ? a : b)
+
+
+#define ON 		1
+#define OFF		0
+
 // I2C bus associations
 #define IMU_BUS 	2
 #define BMP_BUS 	2

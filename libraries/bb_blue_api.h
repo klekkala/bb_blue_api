@@ -8,6 +8,8 @@
 *
 * James Strawson - 2016
 *******************************************************************************/
+#define _GNU_SOURCE  // to enable macros in pthread
+
 
 #ifndef ROBOTICS_CAPE
 #define ROBOTICS_CAPE
@@ -15,6 +17,29 @@
 #include <stdint.h> // for uint8_t types etc
 #include <stdio.h>
 #include <pthread.h>    // multi-threading
+#include <stdlib.h>
+#include <string.h>
+#include <fcntl.h>
+#include <unistd.h>
+#include <getopt.h>
+#include <termios.h>
+#include <errno.h>
+#include <sys/ioctl.h>
+#include <sys/types.h>  // for uint8_t types etc
+#include <sys/stat.h>
+#include <time.h>		// usleep, nanosleep
+#include <math.h>		// atan2 and fabs
+#include <signal.h>		// capture ctrl-c
+#include <linux/input.h>// buttons
+#include <poll.h> 		// interrupt events
+#include <sys/mman.h>	// mmap for accessing eQep
+#include <sys/socket.h>	// mavlink udp socket	
+#include <netinet/in.h> // mavlink udp socket	
+#include <sys/time.h>
+#include <arpa/inet.h>  // mavlink udp socket	
+#include <ctype.h>		// for isprint()
+#include <sys/select.h> // for read timeout
+#include <features.h>
 
 
 typedef struct timespec	timespec;
@@ -61,6 +86,8 @@ int cleanup_board();		// call at the very end of main()
 * All example programs use these functions. See the bare_minimum example 
 * for a skeleton outline.
 *******************************************************************************/
+
+
 typedef enum state_t {
 	UNINITIALIZED,
 	RUNNING,
@@ -362,14 +389,14 @@ float get_adc_volt(int ch);
 *
 * See the test_servos, sweep_servos, and calibrate_escs examples.
 ******************************************************************************/
-int enable_servo_power_rail();
+/*int enable_servo_power_rail();
 int disable_servo_power_rail();
 int send_servo_pulse_normalized(int ch, float input);
 int send_servo_pulse_normalized_all(float input);
 int send_esc_pulse_normalized(int ch, float input);
 int send_esc_pulse_normalized_all(float input);
 int send_servo_pulse_us(int ch, int us);
-int send_servo_pulse_us_all(int us);
+int send_servo_pulse_us_all(int us);*/
 
 
 /******************************************************************************
@@ -1198,7 +1225,7 @@ int set_pwm_duty_ns(int subsystem, char ch, int duty_ns);
 // eQEP functions
 
 int init_eqep(int ss, int mode);
-int is_init_eqep(int ss);
+int is_eqep_init(int ss);
 //int set_period(int ss, int period_val)
 int read_eqep(int ch);
 int write_eqep(int ch, int val);

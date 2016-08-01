@@ -6,7 +6,6 @@
 *******************************************************************************/
 
 #include "bb_blue_api.h"
-#include "useful_includes.h"
 
 /*******************************************************************************
 * @ int null_func()
@@ -103,6 +102,31 @@ timespec timespec_diff(timespec A, timespec B){
 		temp.tv_nsec = A.tv_nsec-B.tv_nsec;
 	}
 	return temp;
+}
+
+/*******************************************************************************
+* @ int timespec_add(timespec* start, float seconds)
+* 
+* Adds an amount of time in seconds to a timespec struct. The time added is a
+* floating point value to make respresenting fractions of a second easier.
+* the timespec is passed as a pointer so it can be modified in place.
+* Seconds may be negative. 
+*******************************************************************************/
+void timespec_add(timespec* start, float seconds){
+	int s = (int)seconds; // round down by truncation
+	start->tv_sec += s;
+	start->tv_nsec += (seconds-s)*1000000000;
+	
+	if (start->tv_nsec>=1000000000){
+		start->tv_nsec -= 1000000000;
+		start->tv_sec += 1;
+	}
+	else if (start->tv_nsec<0){
+		start->tv_nsec += 1000000000;
+		start->tv_sec -= 1;
+	}
+	
+	return;
 }
 
 /*******************************************************************************
@@ -214,8 +238,8 @@ int suppress_stderr(int (*func)(void)){
 *******************************************************************************/
 int continue_or_quit(){
 	// set stdin to non-canonical raw mode to capture all button presses 
+	fflush(stdin);
 	system("stty raw");
-	
   	int c=getchar();
   	int ret = -1; // set to 0 if enter is pressed
 	if(c==3){
@@ -229,7 +253,5 @@ int continue_or_quit(){
 	printf("\n");
 	return ret;
 }
-
-
 
 

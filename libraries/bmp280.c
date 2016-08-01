@@ -5,10 +5,6 @@
 
 #include "bb_blue_api.h"
 #include "sensor_config.h"
-#include "useful_includes.h"
-
-#include <stdio.h>
-#include <math.h>
 
 
 typedef struct bmp280_data_t{

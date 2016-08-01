@@ -33,13 +33,14 @@ either expressed or implied, of the FreeBSD Project.
 
 #include <bb_blue_api.h>
 
+
 #define SPEED 0.3 // choose from 0 to 1
 
 int main(){
-	initialize_cape();
+	initialize_board();
 	enable_motors(); // bring H-bridges of of standby
-	set_led(GREEN,HIGH);
-	set_led(RED,HIGH);
+	set_led(GREEN,ON);
+	set_led(RED,OFF);
 	
 	// Forward
 	set_motor_all(SPEED);
@@ -56,7 +57,7 @@ int main(){
 	disable_motors();	//put H-bridges into standby
 	printf("All Motors Off\n\n");
 	
-	cleanup_cape();
+	cleanup_board();
 	return 0;
 }
 

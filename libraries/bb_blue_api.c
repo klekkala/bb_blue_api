@@ -1,4 +1,5 @@
-#include "useful_includes.h"
+
+
 #include "bb_blue_api.h"
 #include "sensor_config.h"
 
@@ -217,7 +218,7 @@ int cleanup_board(){
 	disable_motors();
 	deselect_spi1_slave(1);	
 	deselect_spi1_slave(2);	
-	disable_servo_power_rail();
+	//disable_servo_power_rail();
 	
 	
 	#ifdef DEBUG
