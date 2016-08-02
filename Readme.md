@@ -1,4 +1,4 @@
-### BB Blue APIs
+# BB Blue APIs
 
 [![Build Status](https://travis-ci.org/kiran4399/bb_blue_api.svg?branch=master)](https://travis-ci.org/kiran4399/bb_blue_api)
 
@@ -6,25 +6,44 @@
 This repository consists of easy­-to-­use APIs for the hardware on the ​Beaglebone Blue. These APIs will be rewritten from the original Strawson APIs which were written for the Strawson Robotics Cape which used the Cape's hardware by the userspace drivers and mmap. On the other hand, Beaglebone Blue APIs uses kernel-API approach to use the Beaglebone Blue hardware. Currently testing for the sensors with the kernel drivers is under progress.
 
 
-##Testing using Beaglebone Black and Robotics Cape
+Beaglebone Blue comes with the following features:
 
-Robotics Cape mainly uses the following sensors:
-
-1. MPU-9150 9 axix IMU
-2. BMP-180 Pressure sensor
-3. TI-eQEP Rotatory encoders
+1. 2+2 LED and Button for easy operation
+2. 9-Axis IMU: Invensense MPU-9250
+3. Barometer: Bosch BMP280
+4. 4 H-Bridge DC Motors Controllers 1.2A each(PWM supported)
+5. I2C, SPI, UART support for external devices
+6. Supports Orange and Spektrum DSM2 Satellite Receivers
+7. 3 channel ADC support
+8. 3 TI-eQEP Rotatory encoders + 1 PRU enabled PRU
+9. 8-Channel Servo/ESC Output enabled by PRU
+10. 6V 4A Regulated Power Supply to Protect Servos
+11. 2 Cell Lipo Charging, Balancing, and Protection
+12. 6-16V DC Input Jack to Power BBB and Charge LiPo Battery
 
 More info and detailed approach on how these sensors can be installed on the 4.4 mainline is given in the wiki page.
 
-###Library functions
+##Library functions:
+___
+
+###Board API
 
 `int initialize_board();` 
 
 initializes beaglebone blue by loading and initializing the necessary variables.
 
-Returns 0 on success.     
+Returns 0 on success. 
+
+
+`int cleanup_board();` 
+
+shuts down beaglebone blue by deleting and cleaning the necessary variables.
+
+Returns 0 on success. 
 
 ___
+
+###IMU API
 
 `int initialize_imu(int sample_rate, signed char orientation[9]);` 
 
@@ -92,6 +111,7 @@ Returns 0 on success
 
 ___
 
+###Baro API
 
 `int initialize_baro(void);`  
 
@@ -116,6 +136,8 @@ Upon given the ground level baseline and the pressure at a specific altitude, it
 @baseline : pressure value at the ground level  
 
 ___
+
+###ADC API
 
 `int get_adc_raw(int p)`
 
@@ -151,6 +173,8 @@ returns the DC power jack voltage on the robotics cape this accounts for the vol
 Returns the value of the dc voltage on success. 
 
 ___
+
+###LED and Button API
 
 `int set_led(led_t led, int state)` 
 
@@ -238,6 +262,8 @@ blinks the specificed led for a frequency of `hz` and a period of `period`
 
 ___
 
+###PWM API
+
 `int set_motor(int motor, float duty)`  
 
 set a motor direction and power motor is from 1 to 4, duty is from -1.0 to +1.0 
@@ -261,7 +287,7 @@ ___
 
 This puts one or all motor outputs in high-impedance state which lets the motor spin freely as if it wasn't connected to anything.
 
-@motor : id of teh motor which needs to be put to free-spin
+@motor : id of the motor which needs to be put to free-spin
 
 ___
 
