@@ -8,7 +8,6 @@ Description: Unit testing API for buttons and leds
 
 #include "bb_blue_api.h"
 #include "sensor_config.h"
-#include "useful_includes.h"
 
 
 /*******************************************************************************

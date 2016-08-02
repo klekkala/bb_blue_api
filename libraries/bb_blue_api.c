@@ -50,7 +50,7 @@ int initialize_board(){
 		return -1;
 	}
 	pid_t current_pid = getpid();
-	fprintf("%d",(int)current_pid, fd);
+	fputc(current_pid, fd);
 	fflush(fd);
 	fclose(fd);
 	
