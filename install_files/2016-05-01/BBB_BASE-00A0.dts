@@ -340,5 +340,17 @@ fragment@32 {
             };
         };
     };
+
+
+  fragment@34 {
+		target = <&tscadc>;
+		__overlay__ {
+
+			status = "okay";
+			adc {
+    		ti,adc-channels = <0 1 2 3 4 5>;
+			};
+		};
+	};
 	
 };
