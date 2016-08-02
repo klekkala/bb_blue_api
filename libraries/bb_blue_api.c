@@ -50,15 +50,15 @@ int initialize_board(){
 		return -1;
 	}
 	pid_t current_pid = getpid();
-	fputc(current_pid, fd);
+	fputc((int)current_pid, fd);
 	fflush(fd);
 	fclose(fd);
 	
-	// check the device tree overlay is actually loaded
+	/* check the device tree overlay is actually loaded
 	if (is_cape_loaded() != 1){
 		printf("ERROR: Device tree overlay not loaded by cape manager\n");
 		return -1;
-	}
+	}*/
 	
 	// initialize mmap io libs
 	printf("Initializing: ");
@@ -96,7 +96,7 @@ int initialize_board(){
 	gpio_set_dir(SERVO_PWR, OUTPUT_PIN);
 	
 
-	printf(" eQEP");
+	/*printf(" eQEP");
 	fflush(stdout);
 	if(init_eqep(0, 0)){
 		printf("mmap_pwmss.c failed to initialize eQEP\n");
@@ -109,7 +109,7 @@ int initialize_board(){
 	if(init_eqep(2, 0)){
 		printf("mmap_pwmss.c failed to initialize eQEP\n");
 		return -1;
-	}
+	}*/
 	
 	// setup pwm driver
 	printf(" PWM");

@@ -16,7 +16,6 @@
 
 
 #include <bb_blue_api.h>
-#include <useful_includes.h>
 
 #define QUIT_TIMEOUT_US 1500000 // quit after 1.5 seconds holding pause button
 
@@ -73,7 +72,7 @@ int on_mode_release(){
 
 // main function usually sits in one while loop blinking LEDs depending
 int main(){
-	if(initialize_cape()){
+	if(initialize_board()){
 		printf("failed to initialize cape\n");
 		return -1;
 	}
@@ -112,6 +111,6 @@ int main(){
 	}
 	
 	// now that the while loop has exited, clean up neatly and exit compeltely.
-	cleanup_cape();
+	cleanup_board();
 	return 0;
 }
