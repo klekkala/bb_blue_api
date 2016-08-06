@@ -500,3 +500,68 @@ ___
 sets motor brake to all the motors
 
 ___
+
+###UART API
+
+`int initialize_uart(int bus, int baudrate, float timeout_s)`  
+
+set a motor direction and power motor is from 1 to 4, duty is from -1.0 to +1.0 
+
+@motor : Sysevent number ( 0 – 63 )
+@duty : Sysevent number ( 0 – 63 )  
+
+Returns 0 on success.  
+
+___
+
+`int close_uart(int bus)` 
+
+applies the same duty cycle argument to all 4 motors
+
+@duty : duty cycle of the motor which needs to be set  
+
+___
+
+`int get_uart_fd(int bus)` 
+
+This puts one or all motor outputs in high-impedance state which lets the motor spin freely as if it wasn't connected to anything.
+
+@motor : id of the motor which needs to be put to free-spin
+
+___
+
+`int flush_uart(int bus)` 
+
+set_motor_free_spin to all the motors
+
+___
+
+`int uart_send_bytes(int bus, int bytes, char* data)` 
+
+These will connect one or all motor terminal pairs together which makes the motor fight against its own back EMF turning it into a brake.
+
+@motor : id of the motor
+
+___
+
+`int uart_send_byte(int bus, char data)` 
+
+sets motor brake to all the motors
+
+___
+
+`int uart_read_bytes(int bus, int bytes, char* buf)`
+
+turns on the standby pin to enable the h-bridge ICs
+
+Returns 0 on success
+
+___
+
+`int uart_read_line(int bus, int max_bytes, char* buf)`
+
+turns off the standby pin to disable the h-bridge ICs and disables PWM output signals.
+
+Returns 0 on success
+
+___
