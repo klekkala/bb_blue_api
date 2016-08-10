@@ -39,8 +39,7 @@ Bit 0 /
 		"P8.40",	/*SERVO_6*/
 		"P8.41",	/*SERVO_7*/
 		"P8.42",	/*SERVO_8*/
-		
-		"servo_sysfs"
+
 		"pruss",
 		"pru0",
 		"pru1";
@@ -95,21 +94,21 @@ fragment@1 {
 };
 
 
-fragment@5 {
+fragment@2 {
 	target = <&ehrpwm0>;
 	__overlay__ {
 		status = "okay";
 	};
 };
 
-fragment@6 {
+fragment@3 {
 	target = <&ehrpwm1>;
 	__overlay__ {
 		status = "okay";
 	};
 };
 
-fragment@7 {
+fragment@4 {
 	target = <&ehrpwm2>;
 	__overlay__ {
 		status = "okay";
@@ -119,22 +118,11 @@ fragment@7 {
 /****************************************
  		PRU			
 ****************************************/	
-fragment@31 {
+fragment@5 {
 	target = <&pruss>;
 	__overlay__ {
 		status = "okay";
 	};
 };
-
-/****************************************
- 		SERVO			
-****************************************/	
-fragment@31 {
-	target = <&servo_sysfs>;
-	__overlay__ {
-		status = "okay";
-	};
-};
-
 	
 };
