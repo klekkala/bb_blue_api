@@ -5,11 +5,9 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <poll.h>
-//#include <linux/remoteproc.h>
 
 #include "bb_blue_api.h"
 #include "sensor_config.h"
-#include "useful_includes.h"
 
 
 
@@ -38,23 +36,6 @@ int initialize_pru(){
 	// launch binaries
 	prussdrv_exec_program(SERVO_PRU_NUM, PRU_SERVO_BIN);
 	prussdrv_exec_program(ENCODER_PRU_NUM, PRU_ENCODER_BIN);*/
-
-
-	int ret;
-
-	/* let's power on and boot our remote processor */
-	ret = rproc_boot(rproc_pru);
-	if (ret) {
-		printf("prussdrv boot failed\n");
-        return -1;
-	}
-
-	/*
-	 * our remote processor is now powered on... give it some work
-	 */
-
-	/* let's shut it down now */
-	rproc_shutdown(rproc_pru);
 	
     return 0;
 }
@@ -97,11 +78,11 @@ int send_servo_pulse_us(int ch, int us){
 	int gpio_set_dir(int gpio, PIN_DIRECTION out_flag)
 	int fd;
 	char buf[MAX_BUF];
-	snprintf(buf, sizeof(buf), "SYSFS_SERVO_DIR/in_servo%i/duty_cycle", ch);
+	snprintf(buf, sizeof(buf), "SYSFS_SERVO_DIR/servo%i", ch);
 	fd = open(buf, O_WRONLY);
 	//printf("%d\n", gpio);
 	if (fd < 0) {
-		perror("servo/duty_cycle");
+		perror("servo error");
 		return fd;
 	}
 	
