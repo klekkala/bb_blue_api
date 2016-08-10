@@ -1,11 +1,3 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <errno.h>
-#include <unistd.h>
-#include <fcntl.h>
-#include <poll.h>
-
 #include "bb_blue_api.h"
 #include "sensor_config.h"
 
@@ -75,7 +67,7 @@ int send_servo_pulse_us(int ch, int us){
 	unsigned int num_loops = ((us*200.0)/PRU_SERVO_LOOP_INSTRUCTIONS); 
 	// write to PRU shared memory
 	
-	int gpio_set_dir(int gpio, PIN_DIRECTION out_flag)
+	int gpio_set_dir(int gpio, PIN_DIRECTION out_flag);
 	int fd;
 	char buf[MAX_BUF];
 	snprintf(buf, sizeof(buf), "SYSFS_SERVO_DIR/servo%i", ch);
