@@ -30,11 +30,11 @@ Bit 0 /
 
 		"P8.15",	/*PRU_ENCODER_B*/
 		"P8.16",	/*PRU_ENCODER_A*/
+		"P8.36",	/*SERVO_PWR*/
 		"P8.27",	/*SERVO_1*/
 		"P8.28",	/*SERVO_2*/
 		"P8.29",	/*SERVO_3*/
 		"P8.30",	/*SERVO_4*/
-		"P8.36",	/*SERVO_PWR*/
 		"P8.39",	/*SERVO_5*/
 		"P8.40",	/*SERVO_6*/
 		"P8.41",	/*SERVO_7*/
