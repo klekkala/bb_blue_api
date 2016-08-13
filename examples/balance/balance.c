@@ -7,8 +7,9 @@
 
 #include <bb_blue_api.h>
 #include "balance_config.h"
+#include <sensor_config.h>
 
-/*******************************************************************************
+/******************************************************************************
 * drive_mode_t
 *
 * NOVICE: Drive rate and turn rate are limited to make driving easier.

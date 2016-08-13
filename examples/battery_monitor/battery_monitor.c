@@ -88,9 +88,6 @@ int main(){
 	gpio_set_dir(BATT_LED_3, OUTPUT_PIN);
 	gpio_set_dir(BATT_LED_4, OUTPUT_PIN);
 	
-	// enable adc
-	initialize_mmap_adc();
-	initialize_mmap_gpio();
 	
 	// first decide if the user has called this from a terminal
 	// or as a startup process

@@ -93,6 +93,30 @@ int initialize_imu(imu_data_t *data, imu_config_t conf){
 	return 0;
 }
 
+/*******************************************************************************
+* int calibrate_gyro_routine()
+*
+* Initializes the IMU and samples the gyro for a short period to get steady
+* state gyro offsets. These offsets are then saved to disk for later use.
+*******************************************************************************/
+int calibrate_gyro_routine(){
+	return 0;
+}
+
+
+/*******************************************************************************
+* int calibrate_mag_routine()
+*
+* Initializes the IMU and samples the magnetometer untill sufficient samples
+* have been collected from each octant. From there, fit an ellipse to the data 
+* and save the correct offsets and scales to the disk which will later be
+* applied to correct the uncallibrated magnetometer data to map calibrationed
+* field vectors to a sphere.
+*******************************************************************************/
+int calibrate_mag_routine(){
+	return 0;
+}
+
 
 int16_t read_raw_data(const char* directory){
 
