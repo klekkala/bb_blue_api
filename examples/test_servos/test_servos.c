@@ -173,7 +173,7 @@ int main(int argc, char *argv[]){
 	}
 	
 	// okay, off we go!
-	if(initialize_cape()){
+	if(initialize_board()){
 		printf("ERROR: failed to initialize_cape\n");
 		return -1;
 	}
@@ -270,7 +270,7 @@ int main(int argc, char *argv[]){
 		usleep(1000000/frequency_hz);
 	}
 	
-	cleanup_cape();
+	cleanup_board();
     return 0;
 }
 	

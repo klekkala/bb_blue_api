@@ -10,14 +10,14 @@
 #include <bb_blue_api.h>
 
 int main(){
-	if(initialize_cape()<0){
-		printf("FAILURE: initialize_cape() failed\n");
-		cleanup_cape();
+	if(initialize_board()<0){
+		printf("FAILURE: initialize_board() failed\n");
+		cleanup_board();
 		return -1;
 	}
 	else{
-		printf("SUCCESS: initialize_cape() worked\n");
-		cleanup_cape();
+		printf("SUCCESS: initialize_board() worked\n");
+		cleanup_board();
 		return 0;
 	}
 }

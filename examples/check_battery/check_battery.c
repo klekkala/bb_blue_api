@@ -13,8 +13,8 @@ int main(){
 	float cell_voltage;	// cell voltage
 	float jack_voltage;	// could be dc power supply or another battery
 
-	if(initialize_cape()){
-		printf("ERROR: failed to initialize_cape()\n");
+	if(initialize_board()){
+		printf("ERROR: failed to initialize_board()\n");
 		return -1;
 	}
 	

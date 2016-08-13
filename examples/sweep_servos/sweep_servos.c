@@ -46,7 +46,7 @@ either expressed or implied, of the FreeBSD Project.
 #define MAX_US 1500+300
 
 int main(int argc, char *argv[]){
-    initialize_cape();
+    initialize_board();
     
 	int i;
 	int micros = MIN_US;
@@ -106,7 +106,7 @@ int main(int argc, char *argv[]){
 		usleep(20000); 
 	}
     
-	cleanup_cape();
+	cleanup_board();
     return 0;
 }
 

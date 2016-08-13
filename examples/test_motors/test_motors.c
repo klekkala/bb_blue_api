@@ -99,7 +99,7 @@ int main(int argc, char *argv[]){
 	}
 	
 	// sanity check cape library initialized
-	if(initialize_cape()){
+	if(initialize_board()){
 		printf("failed to initialize cape\n");
 		return -1;
 	}
@@ -169,7 +169,7 @@ int main(int argc, char *argv[]){
 	printf("All Motors Off\n\n");
 	
 	// final cleanup
-	cleanup_cape();
+	cleanup_board();
 	return 0;
 }
 

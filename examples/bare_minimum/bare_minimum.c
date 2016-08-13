@@ -9,7 +9,7 @@
 
 int main(){
 	// always initialize cape library first
-	initialize_cape();
+	initialize_board();
 	
 	printf("\nHello BeagleBone\n");
 	
@@ -28,6 +28,6 @@ int main(){
 	}
 	
 	// exit cleanly
-	cleanup_cape();
+	cleanup_board();
 	return 0;
 }

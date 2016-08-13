@@ -278,7 +278,7 @@ struct sockaddr_in gcAddr;
 ***********************************************************************/
 int main(int argc, char* argv[]){
 	// initialize cape hardware
-	if(initialize_cape()<0){
+	if(initialize_board()<0){
 		blink_red();
 		return -1;
 	}
@@ -356,7 +356,7 @@ int main(int argc, char* argv[]){
 		// blink red until the user exits
 		printf("IMU initialization failed, please reboot\n");
 		blink_red();
-		cleanup_cape();
+		cleanup_board();
 		return -1;
 	}
 	// assigning the interrupt function and stack
@@ -387,7 +387,7 @@ int main(int argc, char* argv[]){
 	
 	// cleanup before closing
 	//close(sock); 	// mavlink UDP socket
-	cleanup_cape();	// de-initialize cape hardware
+	cleanup_board();	// de-initialize cape hardware
 	return 0;
 }
 

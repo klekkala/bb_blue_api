@@ -15,7 +15,7 @@
 #include <bb_blue_api.h>
 
 int main(){
-	if(initialize_cape()){
+	if(initialize_board()){
 		printf("ERROR: failed to initialize cape\n");
 		return -1;
 	}
@@ -58,6 +58,6 @@ int main(){
 		fflush(stdout);
 		usleep(25000);
 	}
-	cleanup_cape();
+	cleanup_board();
 	return 0;
 }

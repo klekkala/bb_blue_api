@@ -83,7 +83,7 @@ int on_pause_press(){
 }
 
 int main(){
-	initialize_cape();
+	initialize_board();
 	set_pause_pressed_func(&on_pause_press);
 	signed char orientation[9] = ORIENTATION_UPRIGHT; //could also use ORIENTATION_FLAT
 	initialize_imu(SAMPLE_RATE_HZ, orientation);
@@ -112,6 +112,6 @@ int main(){
 	while(get_state()!=EXITING){
 		sleep(1);	// chill
 	}
-	cleanup_cape();
+	cleanup_board();
 	return 0;
 }

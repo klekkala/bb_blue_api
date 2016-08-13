@@ -95,7 +95,7 @@ imu_data_t imu_data;
 * Initialize the filters, IMU, threads, & wait untill shut down
 *******************************************************************************/
 int main(){
-	if(initialize_cape()<0){
+	if(initialize_board()<0){
 		printf("ERROR: failed to initialize cape\n");
 		return -1;
 	}
@@ -175,7 +175,7 @@ int main(){
 	
 	// cleanup
 	power_off_imu();
-	cleanup_cape();
+	cleanup_board();
 	return 0;
 }
 

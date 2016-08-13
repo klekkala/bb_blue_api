@@ -10,7 +10,7 @@
 #include <bb_blue_api.h>
 
 int main(){
-	if(initialize_cape()<0){
+	if(initialize_board()<0){
 		printf("Failed to initialize cape, exiting\n");
 		return -1;
 	}
@@ -20,19 +20,19 @@ int main(){
 	printf("as possible to collect sufficient data for calibration\n");
 	printf("Press ENTER to continue or anything else to quit\n");
 	if(continue_or_quit()<0){
-		cleanup_cape();
+		cleanup_board();
 		return -1;
 	}
 	
 	if(calibrate_mag_routine()<0){
 		printf("Failed to complete magnetometer calibration\n");
-		cleanup_cape();
+		cleanup_board();
 		return -1;
 	}
 	
 	printf("\nmagnetometer calibration file written\n");
 	printf("run test_imu to check performance\n");
 		
-	cleanup_cape();
+	cleanup_board();
 	return 0;
 }

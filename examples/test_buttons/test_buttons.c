@@ -38,7 +38,7 @@ int on_mode_released(){
 
 // main just assigns interrupt functions and waits to exit
 int main(){
-	if(initialize_cape()){
+	if(initialize_board()){
 		printf("failed to initialize cape\n");
 		return -1;
 	}
@@ -56,6 +56,6 @@ int main(){
 		usleep(10000);
 	}
 	
-	cleanup_cape();
+	cleanup_board();
 	return 0;
 }

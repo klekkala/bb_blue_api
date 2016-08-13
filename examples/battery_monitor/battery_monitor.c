@@ -7,8 +7,6 @@
 
 #include <bb_blue_api.h>
 #include <sensor_config.h>
-#include <simple_gpio/simple_gpio.h>
-#include <mmap/mmap_gpio_adc.h>
 #include <sys/file.h>
 
 // Critical Max voltages of packs used to detect number of cells in pack

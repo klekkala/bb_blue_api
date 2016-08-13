@@ -389,14 +389,14 @@ float get_adc_volt(int ch);
 *
 * See the test_servos, sweep_servos, and calibrate_escs examples.
 ******************************************************************************/
-/*int enable_servo_power_rail();
+int enable_servo_power_rail();
 int disable_servo_power_rail();
 int send_servo_pulse_normalized(int ch, float input);
 int send_servo_pulse_normalized_all(float input);
 int send_esc_pulse_normalized(int ch, float input);
 int send_esc_pulse_normalized_all(float input);
 int send_servo_pulse_us(int ch, int us);
-int send_servo_pulse_us_all(int us);*/
+int send_servo_pulse_us_all(int us);
 
 
 /******************************************************************************

@@ -25,7 +25,7 @@ int main(){
 	d_filter_t lowpass;
 
 	// set up cape and barometer
-	if(initialize_cape()){
+	if(initialize_board()){
 		printf("ERROR: failed to initialize_cape\n");
 		return -1;
 	}
@@ -77,7 +77,7 @@ int main(){
 	}
 
 	power_down_barometer();
-	cleanup_cape();
+	cleanup_board();
 	return 0;
 }
 

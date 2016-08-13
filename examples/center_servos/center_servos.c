@@ -42,7 +42,7 @@ either expressed or implied, of the FreeBSD Project.
 #include <bb_blue_api.h>
 
 int main(int argc, char *argv[]){
-    initialize_cape();
+    initialize_board();
  
 	int ch = 0;
 	int all = 0;
@@ -82,7 +82,7 @@ int main(int argc, char *argv[]){
 		usleep(20000); 
 	}
     
-	cleanup_cape();
+	cleanup_board();
     return 0;
 }
 

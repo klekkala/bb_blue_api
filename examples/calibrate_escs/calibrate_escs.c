@@ -30,7 +30,7 @@ void *send_pulses(void *params){
 }
 
 int main(){
-	initialize_cape();
+	initialize_board();
 	
 	printf("\nDISCONNECT PROPELLERS FROM MOTORS\n");
 	printf("DISCONNECT POWER FROM ESCS\n");
@@ -70,6 +70,6 @@ END:
 	set_state(EXITING); // this tells the send_pulses thread to stop
 	pthread_join(send_pulse_thread, NULL); // wait for it to stop
 	
-	cleanup_cape();
+	cleanup_board();
 	return 0;
 }

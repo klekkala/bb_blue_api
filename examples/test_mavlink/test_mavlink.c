@@ -62,7 +62,7 @@ void* mavlink_listener(void* ptr){
 
 int main(int argc, char* argv[]){
 	// start the cape an IMU as usual
-	initialize_cape();
+	initialize_board();
 	signed char orientation[9] = ORIENTATION_FLAT; 
 	initialize_imu(20, orientation); //run IMU slowly at 20hz to send to ground control
 	
@@ -103,6 +103,6 @@ int main(int argc, char* argv[]){
 	
 	// close the socket and exit cleanly
 	close(sock);	
-	cleanup_cape();
+	cleanup_board();
 	return 0;
 }

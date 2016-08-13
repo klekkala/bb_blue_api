@@ -10,7 +10,7 @@
 int main(){
 	int i;
 		
-	initialize_cape();
+	initialize_board();
 	
 	printf(" adc_0 |");
 	printf(" adc_1 |");
@@ -33,6 +33,6 @@ int main(){
 		fflush(stdout);
 		usleep(100000);
 	}
-	cleanup_cape();
+	cleanup_board();
 	return 0;
 }

@@ -84,7 +84,7 @@ int main(int argc, char *argv[]){
 		return -1;
 	}
 	
-	if(initialize_cape()){
+	if(initialize_board()){
 		printf("ERROR: failed to initialize_cape\n");
 		return -1;
 	}
@@ -122,6 +122,6 @@ int main(int argc, char *argv[]){
 		usleep(20000);
 	}
 	printf("\n");
-	cleanup_cape();
+	cleanup_board();
 	return 0;
 }

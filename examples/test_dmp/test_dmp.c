@@ -267,7 +267,7 @@ int main(int argc, char *argv[]){
 	}
 	
 	// start by initializing cape as always
-	if(initialize_cape()){
+	if(initialize_board()){
 		printf("ERROR: failed to initialize_cape\n");
 		return -1;
 	}
@@ -289,7 +289,7 @@ int main(int argc, char *argv[]){
 	
 	// shut things down
 	power_off_imu();
-	cleanup_cape();
+	cleanup_board();
 	return 0;
 }
 

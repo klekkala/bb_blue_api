@@ -15,7 +15,7 @@
 #include <bb_blue_api.h>
 
 int main(){
-	if(initialize_cape()<0){
+	if(initialize_board()<0){
 		printf("ERROR: failed to initialize_cape\n");
 	}
 	
@@ -24,7 +24,7 @@ int main(){
 	printf("\n");
 	printf("Press ENTER to continue or anything else to quit\n");
 	if(continue_or_quit()<0){
-		cleanup_cape();
+		cleanup_board();
 		return -1;
 	}
 	
@@ -32,6 +32,6 @@ int main(){
 	calibrate_dsm2_routine();
 	
 	// cleanup and close, calibration file already saved by the routine
-	cleanup_cape();
+	cleanup_board();
 	return 0;
 }

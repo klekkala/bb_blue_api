@@ -21,11 +21,11 @@ int main(){
 	int ret; 			// return value
 	
 	// Initialization
-	initialize_cape();
+	initialize_board();
 	printf("Testing SPI1 \n\n");
 	if(initialize_spi1(SPI_MODE,SPI_SPEED)){
 		printf("Failed to initialize_spi1\n");
-		cleanup_cape();
+		cleanup_board();
 		return -1;
 	}
 
@@ -61,6 +61,6 @@ int main(){
 
 cleanup:
 	close_spi1();
-	cleanup_cape();
+	cleanup_board();
 	return 0;
 }

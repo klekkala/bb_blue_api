@@ -10,7 +10,7 @@
 int main(){
 	imu_data_t data; //struct to hold new data
 	
-	if(initialize_cape()){
+	if(initialize_board()){
 		printf("ERROR: failed to initialize_cape\n");
 		return -1;
 	}
@@ -63,7 +63,7 @@ int main(){
 		fflush(stdout);
 		usleep(100000);
 	}
-	cleanup_cape();
+	cleanup_board();
 	return 0;
 }
 

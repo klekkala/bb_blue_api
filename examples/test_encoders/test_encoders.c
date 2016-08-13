@@ -11,7 +11,7 @@
 int main(){
 	int i;
 
-	if(initialize_cape()<0){
+	if(initialize_board()<0){
 		printf("ERROR: failed to initialize cape");
 	}
 
@@ -31,7 +31,7 @@ int main(){
 		usleep(50000);
 	}
 	
-	cleanup_cape();
+	cleanup_board();
 	return 0;
 }
 
