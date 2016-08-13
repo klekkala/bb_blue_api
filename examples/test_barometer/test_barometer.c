@@ -4,7 +4,7 @@
 * James Strawson 2016
 * This serves as an example of how to read the barometer.
 *******************************************************************************/
-#include <robotics_cape_defs.h>
+#include <sensor_config.h>
 #include <bb_blue_api.h>
 
 // choice of 1,2,4,8,16 oversampling. Here we use 16 and sample at 25hz which
