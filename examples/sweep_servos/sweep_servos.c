@@ -38,6 +38,7 @@ either expressed or implied, of the FreeBSD Project.
 */
 
 #include <bb_blue_api.h>
+#include <sensor_config.h>
 
 #define FORWARD 1
 #define REVERSE -1

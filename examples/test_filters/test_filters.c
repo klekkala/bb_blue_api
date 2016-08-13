@@ -9,6 +9,7 @@
 *******************************************************************************/
 
 #include <bb_blue_api.h>
+#include <sensor_config.h>
 
 #define SAMPLE_RATE 	50
 #define TIME_CONSTANT 	2.0
