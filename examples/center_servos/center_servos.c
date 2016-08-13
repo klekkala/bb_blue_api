@@ -40,6 +40,7 @@ either expressed or implied, of the FreeBSD Project.
 */
 
 #include <bb_blue_api.h>
+#include <sensor_config.h>
 
 int main(int argc, char *argv[]){
     initialize_board();

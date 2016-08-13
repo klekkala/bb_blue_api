@@ -2,6 +2,7 @@
 // James Strawson 2014
 
 #include <bb_blue_api.h>
+#include <sensor_config.h>
 
 #define SAMPLE_RATE_HZ 200	// 200hz
 #define DT 0.005       		// 5ms
