@@ -22,34 +22,34 @@ void illuminate_leds(int i){
 	switch(i){
 	// now illuminate LEDs properly
 	case 4:
-		mmap_gpio_write(BATT_LED_1,HIGH);
-		mmap_gpio_write(BATT_LED_2,HIGH);
-		mmap_gpio_write(BATT_LED_3,HIGH);
-		mmap_gpio_write(BATT_LED_4,HIGH);
+		gpio_set_value(BATT_LED_1,HIGH);
+		gpio_set_value(BATT_LED_2,HIGH);
+		gpio_set_value(BATT_LED_3,HIGH);
+		gpio_set_value(BATT_LED_4,HIGH);
 		break;
 	case 3:
-		mmap_gpio_write(BATT_LED_1,HIGH);
-		mmap_gpio_write(BATT_LED_2,HIGH);
-		mmap_gpio_write(BATT_LED_3,HIGH);
-		mmap_gpio_write(BATT_LED_4,LOW);
+		gpio_set_value(BATT_LED_1,HIGH);
+		gpio_set_value(BATT_LED_2,HIGH);
+		gpio_set_value(BATT_LED_3,HIGH);
+		gpio_set_value(BATT_LED_4,LOW);
 		break;
 	case 2:
-		mmap_gpio_write(BATT_LED_1,HIGH);
-		mmap_gpio_write(BATT_LED_2,HIGH);
-		mmap_gpio_write(BATT_LED_3,LOW);
-		mmap_gpio_write(BATT_LED_4,LOW);
+		gpio_set_value(BATT_LED_1,HIGH);
+		gpio_set_value(BATT_LED_2,HIGH);
+		gpio_set_value(BATT_LED_3,LOW);
+		gpio_set_value(BATT_LED_4,LOW);
 		break;
 	case 1:
-		mmap_gpio_write(BATT_LED_1,HIGH);
-		mmap_gpio_write(BATT_LED_2,LOW);
-		mmap_gpio_write(BATT_LED_3,LOW);
-		mmap_gpio_write(BATT_LED_4,LOW);
+		gpio_set_value(BATT_LED_1,HIGH);
+		gpio_set_value(BATT_LED_2,LOW);
+		gpio_set_value(BATT_LED_3,LOW);
+		gpio_set_value(BATT_LED_4,LOW);
 		break;
 	case 0:
-		mmap_gpio_write(BATT_LED_1,LOW);
-		mmap_gpio_write(BATT_LED_2,LOW);
-		mmap_gpio_write(BATT_LED_3,LOW);
-		mmap_gpio_write(BATT_LED_4,LOW);
+		gpio_set_value(BATT_LED_1,LOW);
+		gpio_set_value(BATT_LED_2,LOW);
+		gpio_set_value(BATT_LED_3,LOW);
+		gpio_set_value(BATT_LED_4,LOW);
 		break;
 	default:
 		printf("can only illuminate between 0 and 4 leds\n");
