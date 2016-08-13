@@ -9,7 +9,7 @@ TOUCH 	 := $(shell touch *)
 CC	:= gcc
 LINKER   := gcc -o
 CFLAGS	:= -c -Wall -g
-LFLAGS	:= -lm -lrt -lpthread -lrobotics_cape
+LFLAGS	:= -lm -lrt -lpthread -lbb_blue_api
 
 SOURCES  := $(wildcard *.c)
 INCLUDES := $(wildcard *.h)
