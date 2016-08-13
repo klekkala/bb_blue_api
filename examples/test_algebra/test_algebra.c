@@ -8,7 +8,6 @@
 *******************************************************************************/
 
 #include <bb_blue_api.h>
-#include <useful_includes.h>
 
 #define DIM 5
 	

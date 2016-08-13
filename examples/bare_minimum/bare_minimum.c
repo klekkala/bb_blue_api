@@ -6,7 +6,6 @@
 *******************************************************************************/
 
 #include <bb_blue_api.h>
-#include <useful_includes.h>
 
 int main(){
 	// always initialize cape library first

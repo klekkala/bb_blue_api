@@ -5,7 +5,6 @@
 * This serves as an example of how to read the IMU with direct reads to the
 * sensor registers. To use the DMP or interrupt-driven timing see test_dmp.c
 *******************************************************************************/
-#include <useful_includes.h>
 #include <bb_blue_api.h>
 
 int main(){

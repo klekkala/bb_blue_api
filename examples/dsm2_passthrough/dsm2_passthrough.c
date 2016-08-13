@@ -11,7 +11,6 @@
 * Raw data is also printed to the terminal for monitoring.
 *******************************************************************************/
 
-#include <useful_includes.h>
 #include <bb_blue_api.h>
 
 typedef enum p_mode_t{

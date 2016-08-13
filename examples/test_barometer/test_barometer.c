@@ -4,7 +4,6 @@
 * James Strawson 2016
 * This serves as an example of how to read the barometer.
 *******************************************************************************/
-#include <useful_includes.h>
 #include <robotics_cape_defs.h>
 #include <bb_blue_api.h>
 

@@ -5,7 +5,6 @@
 * see README.txt for details
 *******************************************************************************/
 
-#include <useful_includes.h>
 #include <bb_blue_api.h>
 #include <robotics_cape_defs.h>
 #include <simple_gpio/simple_gpio.h>

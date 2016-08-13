@@ -4,7 +4,6 @@
 * James Strawson 2016
 * Simple program to display battery state
 *******************************************************************************/
-#include <useful_includes.h>
 #include <bb_blue_api.h>
 
 #define VOLTAGE_DISCONNECT	1	 // Threshold for detecting disconnected battery

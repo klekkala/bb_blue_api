@@ -10,7 +10,6 @@
 *******************************************************************************/
 
 #include <bb_blue_api.h>
-#include <useful_includes.h>
 
 #define BUF_SIZE 	32
 #define TIMEOUT_S 	0.5

@@ -5,7 +5,6 @@
 * Reference solution for balancing EduMiP
 *******************************************************************************/
 
-#include <useful_includes.h>
 #include <bb_blue_api.h>
 #include "balance_config.h"
 

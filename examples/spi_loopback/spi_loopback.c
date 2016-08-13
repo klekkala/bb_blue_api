@@ -9,7 +9,6 @@
 *******************************************************************************/
 
 #include <bb_blue_api.h>
-#include <useful_includes.h>
 
 #define SPI_MODE	0
 #define SPI_SPEED	24000000

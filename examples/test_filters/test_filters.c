@@ -9,7 +9,6 @@
 *******************************************************************************/
 
 #include <bb_blue_api.h>
-#include <useful_includes.h>
 
 #define SAMPLE_RATE 	50
 #define TIME_CONSTANT 	2.0

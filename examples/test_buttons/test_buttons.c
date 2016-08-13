@@ -6,7 +6,6 @@
 * It simply prints to the screen when a button has been pressed or released.
 *******************************************************************************/
 
-#include <useful_includes.h>
 #include <bb_blue_api.h>
 
 // pause button pressed interrupt function

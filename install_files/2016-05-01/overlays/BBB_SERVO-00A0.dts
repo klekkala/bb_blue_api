@@ -1,0 +1,32 @@
+/*
+ * Custom overlay for ADC for Beaglebone Blue
+ * Author: Kiran Kumar Lekkala
+ */
+
+ 
+/dts-v1/;
+/plugin/;
+
+/ {
+	compatible = "ti,beaglebone", "ti,beaglebone-black", "ti,beaglebone-green";
+
+	// identification
+	part-number = "BBB_SERVO";
+	version = "00A0";
+
+	// resources this cape uses
+	exclusive-use =
+		"P9.39", 	/*AIN0*/
+		"P9.40", 	/*AIN1*/
+
+		"pwm-servo";	// hardware ip used
+
+
+	fragment@0 {
+		target = <&pwm-servo>;
+		__overlay__ {
+
+			status = "okay";
+		};
+	};
+};

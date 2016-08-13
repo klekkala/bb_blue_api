@@ -6,7 +6,6 @@
 * to the screen when called.
 *******************************************************************************/
 
-#include <useful_includes.h>
 #include <bb_blue_api.h>
 
 // possible modes, user selected with command line arguments

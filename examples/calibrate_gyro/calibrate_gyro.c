@@ -8,7 +8,6 @@
 *******************************************************************************/
 
 #include <bb_blue_api.h>
-#include <useful_includes.h>
 
 int main(){
 	if(initialize_cape()<0){

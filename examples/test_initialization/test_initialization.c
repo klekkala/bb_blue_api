@@ -7,7 +7,6 @@
 * before loading your project. You don't need to use this directly.
 *******************************************************************************/
 
-#include <useful_includes.h>
 #include <bb_blue_api.h>
 
 int main(){

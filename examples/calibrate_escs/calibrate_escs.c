@@ -16,7 +16,6 @@
 * you execute the program.
 *******************************************************************************/
 
-#include <useful_includes.h>
 #include <bb_blue_api.h>
 
 float width; // global variable for normalized pulse width to send

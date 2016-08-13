@@ -12,7 +12,6 @@
 * paired to, not your BeagleBone.
 *******************************************************************************/
 
-#include <useful_includes.h>
 #include <bb_blue_api.h>
 
 int main(){
