@@ -426,10 +426,10 @@ ___
 
 `int initialize_spi1(int mode, int speed_hz)`  
 
-set a motor direction and power motor is from 1 to 4, duty is from -1.0 to +1.0 
+Functions for interfacing with SPI1 on the beaglebone and Robotics Cape
 
-@motor : Sysevent number ( 0 – 63 )
-@duty : Sysevent number ( 0 – 63 )  
+@mode : SPI mode
+@speed_hz : Operating frequency 
 
 Returns 0 on success.  
 
@@ -437,51 +437,61 @@ ___
 
 `int get_spi1_fd()` 
 
-applies the same duty cycle argument to all 4 motors
+Returns the file descriptor for spi1 once initialized. Use this if you want to do your own reading and writing to the bus instead of the basic functions defined here. If the bus has not been initialized, 
 
-@duty : duty cycle of the motor which needs to be set  
+Return -1
 
 ___
 
 `int close_spi1()` 
 
-This puts one or all motor outputs in high-impedance state which lets the motor spin freely as if it wasn't connected to anything.
+Closes the file descriptor and sets initialized to 0.
 
-@motor : id of the motor which needs to be put to free-spin
+Return 0 on success
 
 ___
 
 `int select_spi1_slave(int slave)` 
 
-set_motor_free_spin to all the motors
+Selects a slave by pulling the corresponding slave select pin to ground. It also ensures the other slave is not selected.
+
+@slave: 1 or 2
+
+Return 0 on success
+
+___
+
+`int deselect_spi1_slave(int slave)`
+
+Deselects a slave (1 or 2) by pulling the corresponding slave select pin to to 3.3V.
 
 ___
 
 `int spi1_read_bytes(char* data, int bytes)` 
 
-These will connect one or all motor terminal pairs together which makes the motor fight against its own back EMF turning it into a brake.
+Like uart_send_bytes, this lets you send any byte sequence you like.
 
-@motor : id of the motor
+Return 0 on success
 
 ___
 
 `int spi1_send_bytes(char* data, int bytes)` 
 
-sets motor brake to all the motors
+Like uart_read_bytes, this lets you read a byte sequence without sending.
 
 ___
 
 `int spi1_transfer(char* tx_data, int tx_bytes, char* rx_data)`
 
-turns on the standby pin to enable the h-bridge ICs
+This is a generic wrapper for the ioctl spi transfer function. It lets the user send any sequence of bytes and read the response.
 
-Returns 0 on success
+Return value is the number of bytes received or -1 on error.
 
 ___
 
 `int spi1_write_reg_byte(char reg_addr, char data)`
 
-turns off the standby pin to disable the h-bridge ICs and disables PWM output signals.
+Used for writing a byte value to a register. This sends in order the address and byte to be written. It also sets the MSB of the register to 1 which indicates a write operation on many ICs. If you do not want this particular functionality, use spi1_send_bytes() to send a byte string of your choosing.
 
 Returns 0 on success
 
@@ -489,56 +499,67 @@ ___
 
 `char spi1_read_reg_byte(char reg_addr)` 
 
-These will connect one or all motor terminal pairs together which makes the motor fight against its own back EMF turning it into a brake.
+Reads a single character located at address reg_addr. This is accomplished by sending the reg_addr with the MSB set to 0 indicating a read on many ICs. 
 
-@motor : id of the motor
+@reg_addr: Address of the register
+
+Returns the read byte
 
 ___
 
 `int spi1_read_reg_bytes(char reg_addr, char* data, int bytes)` 
 
-sets motor brake to all the motors
+Reads multiple bytes located at address reg_addr. This is accomplished by sending the reg_addr with the MSB set to 0 indicating a read on many ICs. 
 
+Returns 0 on successful read
 ___
 
 ###UART API
 
 `int initialize_uart(int bus, int baudrate, float timeout_s)`  
 
-set a motor direction and power motor is from 1 to 4, duty is from -1.0 to +1.0 
+Initalizes UART
 
-@motor : Sysevent number ( 0 – 63 )
-@duty : Sysevent number ( 0 – 63 )  
+@bus: needs to be between MIN_BUS and MAX_BUS which here is 0 & 5.
+@baudrate: must be one of the standard speeds in the UART spec. 115200 and 57600 are most common.
+@timeout: this is in seconds and must be >=0.1
 
-Returns 0 on success.  
+Returns -1 for failure or 0 for success  
 
 ___
 
 `int close_uart(int bus)` 
+If the bus is open and has been initialized, close it and return 0. If the bus in uninitialized, just return right away.
 
-applies the same duty cycle argument to all 4 motors
+@bus: needs to be between MIN_BUS and MAX_BUS which here is 0 & 5.
 
-@duty : duty cycle of the motor which needs to be set  
+Return -1 if bus is out of bounds. 
 
 ___
 
 `int get_uart_fd(int bus)` 
 
-This puts one or all motor outputs in high-impedance state which lets the motor spin freely as if it wasn't connected to anything.
+Returns the file descriptor for a uart bus once it has been initialized. Use this if you want to do your own reading and writing to the bus instead of the basic functions defined here. If the bus has not been initialized, 
 
-@motor : id of the motor which needs to be put to free-spin
+@bus: needs to be between MIN_BUS and MAX_BUS which here is 0 & 5.
+
+Return -1 on success
 
 ___
 
 `int flush_uart(int bus)` 
 
-set_motor_free_spin to all the motors
+flushes (discards) any data received but not read. Or written but not sent.
+
+@bus: needs to be between MIN_BUS and MAX_BUS which here is 0 & 5.
+
+Return -1 on success
 
 ___
 
 `int uart_send_bytes(int bus, int bytes, char* data)` 
 
-These will connect one or all motor terminal pairs together which makes the motor fight against its own back EMF turning it into a brake.
+This is essentially a wrapper for the linux write() function with some sanity checks. Returns -1 on error, otherwise returns number of bytes sent.
 
 @motor : id of the motor
 
@@ -546,13 +567,15 @@ ___
 
 `int uart_send_byte(int bus, char data)` 
 
-sets motor brake to all the motors
+This is essentially a wrapper for the linux write() function with some sanity checks. Returns -1 on error, otherwise returns number of bytes sent.
+
+@bus: needs to be between MIN_BUS and MAX_BUS which here is 0 & 5.
 
 ___
 
 `int uart_read_bytes(int bus, int bytes, char* buf)`
 
-turns on the standby pin to enable the h-bridge ICs
+This is a blocking function call. It will only return once the desired number of bytes has been read from the buffer or if the global flow state defined in bb_blue_api.h is set to EXITING. Due to the Sitara's UART FIFO buffer, MAX_READ_LEN (128bytes) is the largest packet that can be read with a single call to read(). For reads larger than 128bytes, we run a loop instead.
 
 Returns 0 on success
 
@@ -560,7 +583,11 @@ ___
 
 `int uart_read_line(int bus, int max_bytes, char* buf)`
 
-turns off the standby pin to disable the h-bridge ICs and disables PWM output signals.
+Function for reading a line of characters ending in '\n' newline character. This is a blocking function call. It will only return on these conditions:
+* a '\n' new line character was read, this is discarded.
+* max_bytes were read, this prevents overflowing a user buffer.
+* timeout declared in initialize_uart() is reached
+* Global flow state in robotics_cape.h is set to EXITING.
 
 Returns 0 on success
 
