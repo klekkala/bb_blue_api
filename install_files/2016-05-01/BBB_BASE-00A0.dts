@@ -348,7 +348,7 @@ fragment@32 {
 
 			status = "okay";
 			adc {
-    		ti,adc-channels = <0 1 2 3 4 5>;
+    		ti,adc-channels = <0 1 2 3 5 6>;
 			};
 		};
 	};

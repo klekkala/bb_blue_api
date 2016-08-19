@@ -17,6 +17,7 @@ int adc_read_raw(int ch){
 	fd = open(buf, O_RDONLY);
 	if (fd < 0) {
 		perror("in_voltage_raw");
+		printf("faulty adc is %d", ch);
 		return fd;
 	}
 
