@@ -119,8 +119,6 @@
 #define SYSFS_EQEP_DIR "/sys/devices/ocp.*/48304000.epwmss/48304180.eqep"
 #define SYSFS_SERVO_DIR "/dev/servo_drv"
 
-
-#define SYSFS_GPIO_DIR "/sys/class/gpio"
 #define MAX_BUF 64
 #define SYSFS_OMAP_MUX_DIR "/sys/kernel/debug/omap_mux/"
 
