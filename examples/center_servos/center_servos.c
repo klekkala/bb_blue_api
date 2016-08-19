@@ -39,50 +39,18 @@ either expressed or implied, of the FreeBSD Project.
 	on another channel for controlling high-performance brushless ESCs
 */
 
+
+
 #include <bb_blue_api.h>
 #include <sensor_config.h>
 
 int main(int argc, char *argv[]){
     initialize_board();
  
-	int ch = 0;
-	int all = 0;
-
-	// check if user gave command line argument for which servo to use
-	if (argc==1){
-		// if not, drive all servos
-		all = 1;
-    }
-	// set the single channel to use
-	else{
-		ch = atoi(argv[1]);
-		all = 0;
-		if(ch>SERVO_CHANNELS || ch<1){
-			printf("choose a channel between 1 and %d\n", SERVO_CHANNELS);
-			return -1;
-		}
-	}
-	printf("\n");
-	printf("sending center pulses, width: %d microseconds\n", SERVO_MID_US);
-	printf("press ctrl-c to exit\n");
-	
-	// make sure the servos get power
 	enable_servo_power_rail();
-	
-	while(get_state()!=EXITING){
-		// if user gave no arguments, send single pulse to each servo
-		if(all){
-			send_servo_pulse_us_all(SERVO_MID_US);
-		}
-		// or send to just the one requested servo
-		else{
-			send_servo_pulse_us(ch,SERVO_MID_US);
-		}
-		
-		// Send pulses at roughly 50hz
-		usleep(20000); 
-	}
-    
+
+	while(1){
+}	
 	cleanup_board();
     return 0;
 }

@@ -39,7 +39,7 @@ Bit 0 /
 		"P8.34",	/*MDIR_2B*/
 		"P8.37",	/*UART5_TX*/
 		"P8.38",	/*UART5_RX*/
-		"P8.42",	/*SERVO_8*/
+		"P8.36",	/*SERVO_PWR*/
 		"P8.43",	/*MDIR_3B*/
 		"P8.44",	/*MDIR_3A*/
 		"P8.45",	/*MDIR_4A*/
