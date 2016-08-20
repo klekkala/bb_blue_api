@@ -115,11 +115,11 @@ int initialize_board(){
 	printf(" PWM");
 	fflush(stdout);
 	if(init_pwm(1,PWM_FREQ)){
-		printf("simple_pwm.c failed to initialize PWMSS 0\n");
+		printf("ehr_pwm.c failed to initialize PWMSS 0\n");
 		return -1;
 	}
 	if(init_pwm(2,PWM_FREQ)){
-		printf("simple_pwm.c failed to initialize PWMSS 1\n");
+		printf("ehr_pwm.c failed to initialize PWMSS 1\n");
 		return -1;
 	}
 	
@@ -136,19 +136,6 @@ int initialize_board(){
 	// Load binary into PRU
 	printf(" PRU\n");
 	fflush(stdout);
-
-/*#ifdef DEBUG  	// if in debug mode print everything
-	ret=initialize_pru();
-#else  // otherwise supress the annoying prints
-	ret=suppress_stderr(&initialize_pru); 
-#endif
-
-	if(ret<0){
-		printf("ERROR: PRU init FAILED\n");
-		pru_initialized = 0;
-		return -1;
-	}
-	pru_initialized=1;*/
 		
 	// Start Signal Handler
 	#ifdef DEBUG

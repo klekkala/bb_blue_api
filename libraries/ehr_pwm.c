@@ -64,7 +64,7 @@ int init_pwm(int subsystem, int frequency){
 	snprintf(buf, sizeof(buf), SYSFS_PWM_DIR "/pwmchip%d/export", 2*subsystem);
 	export_fd = open(buf, O_WRONLY);
 	if (export_fd < 0) {
-		printf("error opening pwm export file\n");
+		printf("error opening pwm export file1\n");
 		return -1;
 	}
 	// export just the A channel for that subsystem
@@ -159,7 +159,8 @@ int uninit_pwm(int subsystem){
 		printf("PWM subsystem must be between 0 and 2\n");
 		return -1;
 	}
-	fd = open(SYSFS_PWM_DIR "/unexport", O_WRONLY);
+	snprintf(buf, sizeof(buf), SYSFS_PWM_DIR "/pwmchip%d/unexport", 2*subsystem);
+	fd = open(buf, O_WRONLY);
 	if (fd < 0) {
 		printf("error opening pwm export file\n");
 		return -1;

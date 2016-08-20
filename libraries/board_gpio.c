@@ -116,6 +116,7 @@ int gpio_set_value(unsigned int gpio, PIN_VALUE value)
 	fd = open(buf, O_WRONLY);
 	if (fd < 0) {
 		perror("gpio/set-value");
+		printf("faulty gpio is %d", gpio);
 		return fd;
 	}
 
