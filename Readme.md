@@ -342,9 +342,10 @@ ___
 
 `int i2c_set_device_address(int bus, uint8_t devAddr)` 
 
-applies the same duty cycle argument to all 4 motors
+sets the device address
 
-@duty : duty cycle of the motor which needs to be set  
+@bus : ID of the bus
+@devAddr : Address of the device
 
 ___
 
