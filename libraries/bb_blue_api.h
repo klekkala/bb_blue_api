@@ -1,12 +1,13 @@
 /*******************************************************************************
-* robotics_cape.h
+* bb_blue_api.h
 *
-* This contains the complete Robotics Cape API. All functions declared here can 
-* be executed by linking to /usr/lib/robotics_cape.so
+* This contains the complete Beaglebone Blue APIs. All functions declared here can 
+* be executed by linking to /usr/lib/bb_blue_api.so
 *
 * All functions return 0 on success or -1 on failure unless otherwise stated.
-*
-* James Strawson - 2016
+* 
+* Modified by Kiran Kumar Lekkala
+* Created by James Strawson - 2016
 *******************************************************************************/
 #define _GNU_SOURCE  // to enable macros in pthread
 
