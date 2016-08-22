@@ -99,7 +99,7 @@ Bit 0 /
 		"uart4",	/*DSM2*/
 		"uart5", 	/*breakout*/
 		"spi1",
-		"tscadc";
+		"tscadc",
 
 		"pruss",
 		"pru0",
