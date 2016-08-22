@@ -94,27 +94,6 @@ fragment@1 {
 };
 
 
-fragment@2 {
-	target = <&ehrpwm0>;
-	__overlay__ {
-		status = "okay";
-	};
-};
-
-fragment@3 {
-	target = <&ehrpwm1>;
-	__overlay__ {
-		status = "okay";
-	};
-};
-
-fragment@4 {
-	target = <&ehrpwm2>;
-	__overlay__ {
-		status = "okay";
-	};
-};
-
 /****************************************
  		PRU			
 ****************************************/	

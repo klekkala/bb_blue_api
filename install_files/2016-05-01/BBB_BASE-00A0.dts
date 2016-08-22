@@ -72,6 +72,21 @@ Bit 0 /
 		"P9.39", 	/*AIN0*/
 		"P9.40", 	/*AIN1*/
 		"P9.41",	/*MOT_STBY*/
+
+
+		/* eQEP Under Testing */
+
+		"P8.15",	/*PRU_ENCODER_B*/
+		"P8.16",	/*PRU_ENCODER_A*/
+		"P8.36",	/*SERVO_PWR*/
+		"P8.27",	/*SERVO_1*/
+		"P8.28",	/*SERVO_2*/
+		"P8.29",	/*SERVO_3*/
+		"P8.30",	/*SERVO_4*/
+		"P8.39",	/*SERVO_5*/
+		"P8.40",	/*SERVO_6*/
+		"P8.41",	/*SERVO_7*/
+		"P8.42",	/*SERVO_8*/
 		
 		"ehrpwm1A",
 		"ehrpwm1B",
@@ -85,6 +100,10 @@ Bit 0 /
 		"uart5", 	/*breakout*/
 		"spi1",
 		"tscadc";
+
+		"pruss",
+		"pru0",
+		"pru1";
 	
 		
 		
@@ -354,3 +373,15 @@ fragment@32 {
 	};
 	
 };
+
+
+/****************************************
+ 		PRU			
+****************************************/	
+fragment@35 {
+	target = <&pruss>;
+	__overlay__ {
+		status = "okay";
+	};
+};
+
