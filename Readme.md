@@ -331,10 +331,10 @@ ___
 
 `int i2c_init(int bus, uint8_t devAddr)`  
 
-set a motor direction and power motor is from 1 to 4, duty is from -1.0 to +1.0 
+Initialize the I2C bus
 
-@motor : Sysevent number ( 0 – 63 )
-@duty : Sysevent number ( 0 – 63 )  
+@bus : ID of the bus used
+@devAddr : Address of the device 
 
 Returns 0 on success.  
 
@@ -351,73 +351,38 @@ ___
 
 `int i2c_close(int bus)` 
 
-This puts one or all motor outputs in high-impedance state which lets the motor spin freely as if it wasn't connected to anything.
-
-@motor : id of the motor which needs to be put to free-spin
+closes a specific i2c bus
+@bus : id of the bus
 
 ___
 
 `int i2c_claim_bus(int bus)` 
 
-set_motor_free_spin to all the motors
+claims the i2c bus
+@bus : id of the bus
 
 ___
 
 `int i2c_release_bus(int bus)` 
 
-These will connect one or all motor terminal pairs together which makes the motor fight against its own back EMF turning it into a brake.
+Release the used I2C bus
 
-@motor : id of the motor
-
-___
-
-`int i2c_get_in_use_state(int bus)` 
-
-sets motor brake to all the motors
-
-___
-
-`int i2c_read_bytes(int bus, uint8_t regAddr, uint8_t length, uint8_t *data)`
-
-turns on the standby pin to enable the h-bridge ICs
-
-Returns 0 on success
-
-___
-
-`int i2c_read_byte(int bus, uint8_t regAddr, uint8_t *data)`
-
-turns off the standby pin to disable the h-bridge ICs and disables PWM output signals.
-
-Returns 0 on success
-
-___
-
-`int i2c_release_bus(int bus)` 
-
-These will connect one or all motor terminal pairs together which makes the motor fight against its own back EMF turning it into a brake.
-
-@motor : id of the motor
+@bus : ID of the bus
 
 ___
 
 `int i2c_get_in_use_state(int bus)` 
 
-sets motor brake to all the motors
+Checks the used state of the bus
+
+@bus : ID of the bus
 
 ___
 
 `int i2c_read_bytes(int bus, uint8_t regAddr, uint8_t length, uint8_t *data)`
-
-turns on the standby pin to enable the h-bridge ICs
-
-Returns 0 on success
-
-___
-
 `int i2c_read_byte(int bus, uint8_t regAddr, uint8_t *data)`
 
-turns off the standby pin to disable the h-bridge ICs and disables PWM output signals.
+I2C read functions
 
 Returns 0 on success
 
