@@ -26,7 +26,7 @@ More info and detailed approach on how these sensors can be installed on the 4.4
 Source Code: https://github.com/kiran4399/bb_blue_api  
 Wiki: https://github.com/kiran4399/bb_blue_api/wiki  
 Blog: http://linuxcreatures.com/api-support-bbb  
-Documentation: https://github.com/kiran4399/bb_blue_api#library-functions 
+Documentation: https://github.com/kiran4399/bb_blue_api#library-functions  
 Issue Tracker: https://github.com/kiran4399/bb_blue_api/issues  
 Commit History: https://github.com/kiran4399/bb_blue_api/commits/master  
 
