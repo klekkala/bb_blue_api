@@ -11,8 +11,6 @@ CAPENAME="BB_BLUE"
 KERNEL="$(uname -r)"
 DEBIAN="$(cat /etc/debian_version)"
 
-UENV_TXT="/boot/uEnv.txt"
-AM335_DTB="/boot/dtbs/$KERNEL/am335x-boneblack.dtb"
 CONFIG_DIR="/etc/bb_blue_api"
 AUTO_RUN_DIR="/root/Auto_Run_Programs"
 
