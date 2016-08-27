@@ -21,6 +21,8 @@ Beaglebone Blue comes with the following features:
 11. 2 Cell Lipo Charging, Balancing, and Protection
 12. 6-16V DC Input Jack to Power BBB and Charge LiPo Battery
 
+Note: For installing the servo firmware for PRU and the kernel driver for servo control, please visit the repository: https://github.com/kiran4399/bbb_pru_firmware  
+
 More info and detailed approach on how these sensors can be installed on the 4.4.x mainline is given in the wiki page. Following are the links for reference:
 
 Source Code: https://github.com/kiran4399/bb_blue_api  
@@ -28,7 +30,8 @@ Wiki: https://github.com/kiran4399/bb_blue_api/wiki
 Blog: http://linuxcreatures.com/api-support-bbb  
 Documentation: https://github.com/kiran4399/bb_blue_api#library-functions  
 Issue Tracker: https://github.com/kiran4399/bb_blue_api/issues  
-Commit History: https://github.com/kiran4399/bb_blue_api/commits/master  
+Commit History: https://github.com/kiran4399/bb_blue_api/commits/master 
+
 
 ##Library functions:
 ___
