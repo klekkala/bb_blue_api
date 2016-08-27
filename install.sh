@@ -11,6 +11,14 @@ CAPENAME="BB_BLUE"
 KERNEL="$(uname -r)"
 DEBIAN="$(cat /etc/debian_version)"
 
+UENV_TXT="/boot/uEnv.txt"
+AM335_DTB="/boot/dtbs/$KERNEL/am335x-boneblack.dtb"
+CONFIG_DIR="/etc/bb_blue_api"
+AUTO_RUN_DIR="/root/Auto_Run_Programs"
+
+echo " "
+
+
 echo " "
 
 
@@ -70,7 +78,7 @@ fi
 
 # make sure the user really wants to install
 echo ""
-echo "This script will install all Robotics Cape supporting software."
+echo "This script will install all Beaglebone Blue supporting software."
 read -r -p "Continue? [y/n] " response
 case $response in
     [yY]) echo " " ;;
@@ -84,58 +92,16 @@ find . -exec touch {} \;
 
 echo "Installing Device Tree Overlay"
 # newer images ship with dtc compiler
-dtc -O dtb -o /lib/firmware/$OVERLAY.dtbo -b 0 -@ install_files/$OVERLAY.dts
+dtc -O dtb -o /lib/firmware/$OVERLAY.dtbo -b 0 -@ install_files/2016-05-01/$OVERLAY.dts
 
 
-# make a backup of the original uEnv.txt file
-# if it doesn't already exist
-if [ -a "$UENV_TXT.old" ];then
-	echo "backup of $UENV_TXT already exists"
-else
-	echo "making backup copy of $UENV_TXT"
-	cp $UENV_TXT $UENV_TXT.old
-fi
-
-# disable cape-universal in 2015-11-12 image and newer
-# 2015-03-01 was before cape-universal so not needed
-if [ "$IMG" != "2015-03-01" ]; then
-	sed -i '/cape_universal=enable/ s??#cape_universal=enable?' $UENV_TXT
-fi
-
-# all images need HDMI disabled
-echo "optargs=capemgr.disable_partno=BB-BONELT-HDMI,BB-BONELT-HDMIN" >> $UENV_TXT
-
-
-# Now we must increase the I2C bus speed, this is done by tweaking the 
-# am335x-boneblack.dtb file. Modified versions are included with the installer
-#make a backup if it hasn't been made by a previous installation
-if [ -a "$AM335_DTB.old" ];then
-	echo "backup of $AM335_DTB already exists"
-else
-	echo "making backup copy of $AM335_DTB"
-	cp $AM335_DTB $AM335_DTB.old
-fi
-#copy the right file over
-echo "installing new am335x-boneblack.dtb"
-if [ $IMG == "2015-03-01" ]; then
-	cp install_files/$IMG/am335x-boneblack.dtb $AM335_DTB
-elif [ $IMG == "2015-11-12" ]; then
-	cp install_files/$IMG/$DEBIAN/am335x-boneblack.dtb $AM335_DTB
-else
-	echo "invalid IMG variable value $IMG"
-fi
-
-# set Robotics Cape as the only cape to load
-echo "Setting Capemgr to Load $CAPENAME Overlay by Default"
-echo "CAPE=$CAPENAME" > /etc/default/capemgr
-
-# also add to uEnv.txt even though this doesn't work until
-# the cape is pushed upstream. here now in anticipation of that
-echo "cape_enable=capemgr.enable_partno=$CAPENAME" >> $UENV_TXT
 
 echo "Installing PRU Binaries"
-cp install_files/pru/pru_1_servo.bin /usr/bin
-cp install_files/pru/pru_0_encoder.bin /usr/bin
+cp install_files/pru/am335x-pru0-fw /lib/firmware
+
+echo "Rebooting pru-core 0"
+echo "4a334000.pru0" > /sys/bus/platform/drivers/pru-rproc/unbind 2>/dev/null
+echo "4a334000.pru0" > /sys/bus/platform/drivers/pru-rproc/bind
 
 
 echo "Installing Supporting Libraries"
