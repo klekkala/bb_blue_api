@@ -2,7 +2,7 @@
 
 # Bash script to install supporting software for the Robotics Cape
 # tested on follwing beagleboard.org Debian releases 
-# 2014-05-14, 2015-03-01, 2015-11-12
+# 2015-11-12
 # Modified by Kiran Kumar Lekkala and will be used for building and installing bb_blue api on Beaglebone Black
 
 INSTALL_DIR="/root"
