@@ -86,10 +86,10 @@
 #define SPI1_SS2_GPIO_PIN 	49  //gpio1.17	P9.23 
 
 // Battery Indicator LEDs
-#define BATT_LED_1	27 // P8.17
-#define BATT_LED_2	65 // P8.18
-#define BATT_LED_3	61 // P8.26
-#define BATT_LED_4	26 // P8.14
+#define BATT_LED_1	27 // gpio0.27
+#define BATT_LED_2	11 // gpio0.11
+#define BATT_LED_3	61 // gpio1.29
+#define BATT_LED_4	26 // gpio0.26
 
 #define DC_JACK_OFFSET 0.35
 #define LIPO_OFFSET 0.32
